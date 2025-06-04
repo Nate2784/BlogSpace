@@ -1,0 +1,58 @@
+{% extends "blog/base.html" %}
+
+{% block title %}{{ author.username }}'s Profile{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <!-- Profile Header -->
+     <h1 class="text text-center">{{ author.username }}'s Profile</h1>
+    <!-- Profile Header -->
+<div class="text-center border rounded shadow-lg p-5 bg-light">
+    
+    {% if author.profile.profile_picture %}
+        <img src="{{ author.profile.profile_picture.url }}" class="rounded-circle border shadow-sm" width="150" height="150">
+    {% endif %}
+    
+    <h1 class="fw-bold">{{ author.first_name }} {{ author.last_name }}</h1>
+    <p class="text-muted fst-italic">@{{ author.username }}</p>
+    <p class="text-muted mt-3 fst-italic">{{ author.profile.bio }}</p>
+</div>
+
+
+    <!-- Blog Sections -->
+    <div class="row mt-5">
+        <!-- Personal Blogs -->
+        <div class="col-md-6">
+            <h3 class="fw-bold text-center">📖 Personal Blogs</h3>
+            {% for post in own_posts %}
+                <div class="border p-3 rounded mb-4 shadow-sm bg-white">
+                    {% if post.image %}
+                        <img src="{{ post.image.url }}" class="img-fluid rounded mb-2" style="height: 200px; object-fit: cover;">
+                    {% endif %}
+                    <h5 class="fw-bold"><a href="{% url 'post_detail' post.id %}" class="text-dark">{{ post.title }}</a></h5>
+                    <p>{{ post.content|truncatewords:30 }}</p>
+                </div>
+            {% empty %}
+                <p class="text-muted text-center">No personal blogs yet.</p>
+            {% endfor %}
+        </div>
+
+        <!-- Tagged Blogs -->
+        <div class="col-md-6">
+            <h3 class="fw-bold text-center">🏷️ Tagged in Blogs</h3>
+            {% for post in tagged_posts %}
+                <div class="border p-3 rounded mb-4 shadow-sm bg-white">
+                    {% if post.image %}
+                        <img src="{{ post.image.url }}" class="img-fluid rounded mb-2" style="height: 200px; object-fit: cover;">
+                    {% endif %}
+                    <h5 class="fw-bold"><a href="{% url 'post_detail' post.id %}" class="text-dark">{{ post.title }}</a></h5>
+                    <p>{{ post.content|truncatewords:30 }}</p>
+                    <p class="text-muted small fst-italic">Tagged by <strong>{{ post.author.username }}</strong></p>
+                </div>
+            {% empty %}
+                <p class="text-muted text-center">No tagged blogs yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
