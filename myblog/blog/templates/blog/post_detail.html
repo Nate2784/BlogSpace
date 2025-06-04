@@ -65,7 +65,7 @@
                     if (data.liked) {
                         this.classList.remove("btn-outline-primary");
                         this.classList.add("btn-danger");
-                        this.innerText = "❤️ Unlike";
+                        this.innerText = "❤️ dislike";
                     } else {
                         this.classList.remove("btn-danger");
                         this.classList.add("btn-outline-primary");
@@ -79,6 +79,17 @@
         <hr>
         <h3 class="mt-5 fw-bold">💬 Comments</h3>
         <div class="card shadow-sm p-3 bg-light">
+            
+        {% if user.is_authenticated %}
+                <form method="POST" class="mt-4">
+                    {% csrf_token %}
+                    <textarea name="comment" class="form-control mb-2" placeholder="Write a comment..." required></textarea>
+                    <button type="submit" class="btn btn-primary">Post Comment</button>
+                </form>
+            {% else %}
+                <p class="text-muted mt-2 text-center">You must be logged in to comment.</p>
+            {% endif %}
+        <hr>
             {% for comment in comments %}
                 <div class="d-flex align-items-center border p-3 mb-3 rounded bg-white shadow-sm">
                     <img src="{{ comment.user.profile.profile_picture.url }}" 
@@ -103,16 +114,7 @@
             {% empty %}
                 <p class="text-muted text-center">No comments yet. Be the first to share your thoughts!</p>
             {% endfor %}
-
-            {% if user.is_authenticated %}
-                <form method="POST" class="mt-4">
-                    {% csrf_token %}
-                    <textarea name="comment" class="form-control mb-2" placeholder="Write a comment..." required></textarea>
-                    <button type="submit" class="btn btn-primary">Post Comment</button>
-                </form>
-            {% else %}
-                <p class="text-muted mt-2 text-center">You must be logged in to comment.</p>
-            {% endif %}
+   
         </div>
     </div>
 {% endblock %}
