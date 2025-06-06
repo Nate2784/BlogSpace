@@ -65,13 +65,21 @@ def post_detail(request, post_id):
     post = get_object_or_404(Post, id=post_id)
     comments = post.comments.all()
 
+    # Split content into paragraphs at line breaks and capitalize first letters
+    formatted_content = [p.strip().capitalize() for p in post.content.split("\n") if p.strip()]
+
     if request.method == "POST":
         if request.user.is_authenticated:
             text = request.POST.get("comment")
             Comment.objects.create(post=post, user=request.user, text=text)
             return redirect("post_detail", post_id=post.id)
 
-    return render(request, "blog/post_detail.html", {"post": post, "comments": comments})
+    return render(request, "blog/post_detail.html", {
+        "post": post, 
+        "comments": comments, 
+        "formatted_content": formatted_content
+    })
+
 
 from django.http import JsonResponse
 
@@ -88,22 +96,96 @@ def like_post(request, post_id):
 
     return JsonResponse({"liked": liked, "total_likes": post.total_likes()})
 
-from django.contrib.auth.models import User
+from django.shortcuts import render, get_object_or_404, redirect
+from .models import Post
+from .forms import PostForm
 
+def edit_post(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+
+    if request.user != post.author:
+        return redirect("post_detail", post_id=post.id)  # Prevent unauthorized editing
+
+    if request.method == "POST":
+        form = PostForm(request.POST, request.FILES, instance=post)
+        if form.is_valid():
+            form.save()
+            return redirect("post_detail", post_id=post.id)
+    else:
+        form = PostForm(instance=post)
+
+    return render(request, "blog/edit_post.html", {"form": form, "post": post})
+
+
+def delete_post(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+
+    if request.user == post.author:
+        post.delete()
+        return redirect("home")  # Redirect to homepage after deletion
+
+    return redirect("post_detail", post_id=post.id)  # Prevent unauthorized deletion
+
+from .models import User, Profile, Post
+
+@login_required
 def author_profile(request, username):
     author = get_object_or_404(User, username=username)
     own_posts = Post.objects.filter(author=author)
     tagged_posts = Post.objects.filter(tagged_authors=author)
 
+    is_own_profile = request.user == author  # Check if it's the authenticated user's profile
+
     return render(request, "blog/author_profile.html", {
         "author": author,
         "own_posts": own_posts,
-        "tagged_posts": tagged_posts
+        "tagged_posts": tagged_posts,
+        "is_own_profile": is_own_profile,
     })
 
+
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import PasswordChangeForm
 from django.shortcuts import render, redirect
-from .forms import CustomUserCreationForm
-from .models import Profile
+
+
+from .forms import UserUpdateForm, ProfileUpdateForm
+
+@login_required
+def edit_profile(request):
+    if request.method == "POST":
+        user_form = UserUpdateForm(request.POST, instance=request.user)
+        profile_form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user.profile)
+
+        if user_form.is_valid() and profile_form.is_valid():
+            user_form.save()
+            profile_form.save()
+            return redirect("author_profile", username=request.user.username)
+    else:
+        user_form = UserUpdateForm(instance=request.user)
+        profile_form = ProfileUpdateForm(instance=request.user.profile)
+
+    context = {
+        'user_form': user_form,
+        'profile_form': profile_form,
+    }
+    return render(request, "blog/edit_profile.html", context)
+
+
+@login_required
+def change_password(request):
+    if request.method == "POST":
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect("profile", username=request.user.username)
+    else:
+        form = PasswordChangeForm(request.user)
+
+    return render(request, "blog/change_password.html", {"form": form})
+
+
+from .forms import CustomUserCreationForm 
 
 def register(request):
     if request.method == "POST":

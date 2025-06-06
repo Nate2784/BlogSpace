@@ -1,0 +1,25 @@
+{% extends "blog/base.html" %}
+
+{% block title %}Edit Profile - {{ user.username }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5" style="max-width: 600px;">
+    <a href="{% url 'author_profile' user.username %}" class="btn btn-outline-dark mb-3">← Back to Profile</a>
+
+    <h1 class="text-center mb-4">✏️ Edit Profile</h1>
+
+    <div class="card p-4 shadow-sm bg-white">
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <h5>User Info</h5>
+            {{ user_form.as_p }}
+
+            <h5 class="mt-4">Profile Details</h5>
+            {{ profile_form.as_p }}
+
+            <button type="submit" class="btn btn-success w-100 mt-3">Save Changes</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

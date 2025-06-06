@@ -3,118 +3,197 @@
 {% block title %}{{ post.title }}{% endblock %}
 
 {% block content %}
-    <div class="container mt-5">
-       
-        <!-- Go Back Button -->
-        <a href="javascript:history.back()" class="btn btn-outline-dark mb-3">← Go Back</a>
+<style>
+    .post-title {
+        font-size: 2.2rem;
+        color: #333;
+    }
 
-        <!-- Featured Image -->
-        {% if post.image %}
-            <div class="text-center my-4">
-                <img src="{{ post.image.url }}" class="img-fluid rounded shadow-lg w-100" style="max-height: 500px; object-fit: cover;" alt="{{ post.title }}">
-            </div>
-        {% endif %}
+    .post-meta {
+        font-size: 0.95rem;
+        color: #888;
+    }
 
-        <!-- Article Header -->
-        <div class="text-center">
-            <h1 class="fw-bold">{{ post.title }}</h1>
-            <p class="text-muted fst-italic">By 
-                <a href="{% url 'author_profile' post.author.username %}" class="text-primary fw-bold">{{ post.author.username }}</a>
-            </p>
-            <p class="text-muted small">{{ post.created_at|date:"F j, Y" }}</p>
+    .comment-box textarea {
+        resize: vertical;
+        min-height: 100px;
+    }
+
+    .comment-body {
+        background-color: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1rem;
+    }
+
+    .badge-rounded {
+        border-radius: 50px;
+        background: linear-gradient(135deg, #6a11cb, #2575fc);
+        color: white;
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+
+    .like-btn {
+        transition: all 0.3s ease;
+    }
+
+    .like-btn:hover {
+        opacity: 0.9;
+    }
+
+    /* New classes for paragraphs */
+    .lead {
+        font-size: 1.25rem;
+        font-weight: 400;
+        margin-bottom: 1.6rem;
+        line-height: 1.8;
+    }
+
+    .lead-indent {
+        text-indent: 2em;
+    }
+</style>
+
+<div class="container mt-5">
+    <!-- Go Back -->
+    <a href="javascript:history.back()" class="btn btn-outline-dark mb-3">← Go Back</a>
+
+    <!-- Edit/Delete Buttons -->
+    {% if user == post.author %}
+        <div class="d-flex justify-content-end mb-3">
+            <a href="{% url 'edit_post' post.id %}" class="btn btn-warning me-2">✏️ Edit</a>
+            <button class="btn btn-danger" onclick="confirmDelete()">🗑️ Delete</button>
         </div>
+    {% endif %}
 
-        <!-- Article Content -->
-        <article class="px-md-5 py-4 border-top border-bottom" style="text-indent: 2em;">
-            <p class="lead">{{ post.content }}</p>
-        </article>
+    <!-- Featured Image -->
+    {% if post.image %}
+        <div class="text-center mb-4">
+            <img src="{{ post.image.url }}" alt="{{ post.title }}"
+                 class="img-fluid rounded shadow w-100" style="max-height: 500px; object-fit: cover;">
+        </div>
+    {% endif %}
 
-        <!-- Tagged Authors -->
-        {% if post.tagged_authors.all %}
+    <!-- Post Info -->
+    <div class="text-center mb-4">
+        <h1 class="fw-bold post-title">{{ post.title }}</h1>
+        <p class="post-meta">
+            By <a href="{% url 'author_profile' post.author.username %}" class="fw-bold text-primary text-decoration-none">
+                {{ post.author.username }}
+            </a> • {{ post.created_at|date:"F j, Y" }}
+        </p>
+    </div>
+
+    <!-- Content -->
+    <article class="px-md-5 py-4 border-top border-bottom">
+    {% for paragraph in formatted_content %}
+        <p class="lead {% if forloop.first %}lead-indent{% endif %}">
+            {{ paragraph }}
+        </p>
+    {% endfor %}
+    </article>
+
+    <script>
+        function confirmDelete() {
+            if (confirm("Are you sure you want to delete this post? This action cannot be undone.")) {
+                window.location.href = "{% url 'delete_post' post.id %}";
+            }
+        }
+    </script>
+
+    <!-- Tagged Authors -->
+    {% if post.tagged_authors.all %}
         <div class="mt-4">
             <h5 class="fw-bold">🖊️ Tagged Authors:</h5>
             <ul class="list-inline">
                 {% for tagged_author in post.tagged_authors.all %}
                     <li class="list-inline-item">
-                        <a href="{% url 'author_profile' tagged_author.username %}" class="badge bg-secondary text-decoration-none">{{ tagged_author.username }}</a>
+                        <a href="{% url 'author_profile' tagged_author.username %}" class="badge badge-rounded text-decoration-none">
+                            {{ tagged_author.username }}
+                        </a>
                     </li>
                 {% endfor %}
             </ul>
         </div>
-        {% endif %}
+    {% endif %}
 
-        <!-- Like Button -->
-        <div class="mt-4">
-            <h5 id="like-count" class="fw-bold">❤️ Likes: {{ post.total_likes }}</h5>
-            <button id="like-btn" class="btn {% if user in post.likes.all %}btn-danger{% else %}btn-outline-primary{% endif %} btn-lg">
-                {% if user in post.likes.all %}❤️ Unlike{% else %}👍 Like{% endif %}
-            </button>
-        </div>
+    <!-- Likes -->
+    {% if user.is_authenticated %}
+    <div class="mt-4">
+        <h5 id="like-count" class="fw-bold mb-2">❤️ Likes: {{ post.total_likes }}</h5>
+        <button id="like-btn"
+                class="btn {% if user in post.likes.all %}btn-danger{% else %}btn-outline-primary{% endif %} btn-lg like-btn">
+            {% if user in post.likes.all %}❤️ Unlike{% else %}👍 Like{% endif %}
+        </button>
+    </div>
 
-        <script>
-            document.getElementById("like-btn").addEventListener("click", function() {
-                fetch("{% url 'like_post' post.id %}", {
-                    method: "POST",
-                    headers: {
-                        "X-CSRFToken": "{{ csrf_token }}"
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById("like-count").innerText = "❤️ Likes: " + data.total_likes;
-                    if (data.liked) {
-                        this.classList.remove("btn-outline-primary");
-                        this.classList.add("btn-danger");
-                        this.innerText = "❤️ dislike";
-                    } else {
-                        this.classList.remove("btn-danger");
-                        this.classList.add("btn-outline-primary");
-                        this.innerText = "👍 Like";
-                    }
-                });
+    <script>
+        document.getElementById("like-btn").addEventListener("click", function() {
+            fetch("{% url 'like_post' post.id %}", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}"
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("like-count").innerText = "❤️ Likes: " + data.total_likes;
+                if (data.liked) {
+                    this.classList.remove("btn-outline-primary");
+                    this.classList.add("btn-danger");
+                    this.innerText = "❤️ Unlike";
+                } else {
+                    this.classList.remove("btn-danger");
+                    this.classList.add("btn-outline-primary");
+                    this.innerText = "👍 Like";
+                }
             });
-        </script>
+        });
+    </script>
+{% else %}
+    <div class="mt-4 text-muted">
+        <p class="fw-bold">❤️ Likes: {{ post.total_likes }}</p>
+        <p class="small">Login to like this post.</p>
+    </div>
+{% endif %}
 
-        <!-- Enhanced Comment Section -->
-        <hr>
-        <h3 class="mt-5 fw-bold">💬 Comments</h3>
-        <div class="card shadow-sm p-3 bg-light">
-            
+    <!-- Comments Section -->
+    <hr class="my-5">
+    <h3 class="fw-bold mb-4">💬 Comments</h3>
+    <div class="card p-4 shadow-sm bg-light">
+
         {% if user.is_authenticated %}
-                <form method="POST" class="mt-4">
-                    {% csrf_token %}
-                    <textarea name="comment" class="form-control mb-2" placeholder="Write a comment..." required></textarea>
-                    <button type="submit" class="btn btn-primary">Post Comment</button>
-                </form>
-            {% else %}
-                <p class="text-muted mt-2 text-center">You must be logged in to comment.</p>
-            {% endif %}
+            <form method="POST" class="mb-4 comment-box">
+                {% csrf_token %}
+                <textarea name="comment" class="form-control mb-2" placeholder="Write a comment..." required></textarea>
+                <button type="submit" class="btn btn-primary">Post Comment</button>
+            </form>
+        {% else %}
+            <p class="text-muted text-center">You must be logged in to comment.</p>
+        {% endif %}
         <hr>
-            {% for comment in comments %}
-                <div class="d-flex align-items-center border p-3 mb-3 rounded bg-white shadow-sm">
-                    <img src="{{ comment.user.profile.profile_picture.url }}" 
-                        alt="Profile Picture" 
-                        class="rounded-circle border" 
-                        width="50" height="50">
-                        
-                    <div class="ms-3 w-100">
-                        <div class="d-flex justify-content-between">
-                            <strong>
-                                <a href="{% url 'author_profile' comment.user.username %}" class="text-primary">
-                                    {{ comment.user.username }}
-                                </a>
-                            </strong>
-                            <small class="text-muted">{{ comment.created_at }}</small>
-                        </div>
-                        <div class="bg-light p-3 rounded border mt-2">
-                            {{ comment.text }}
-                        </div>
+
+        {% for comment in comments %}
+            <div class="d-flex align-items-start mb-4 bg-white border rounded p-3 shadow-sm">
+                <img src="{{ comment.user.profile.profile_picture.url }}" 
+                     class="rounded-circle me-3 border" width="50" height="50">
+                <div class="w-100">
+                    <div class="d-flex justify-content-between mb-1">
+                        <strong>
+                            <a href="{% url 'author_profile' comment.user.username %}" class="text-primary text-decoration-none">
+                                {{ comment.user.username }}
+                            </a>
+                        </strong>
+                        <small class="text-muted">{{ comment.created_at|date:"M j, Y H:i" }}</small>
+                    </div>
+                    <div class="comment-body">
+                        {{ comment.text }}
                     </div>
                 </div>
-            {% empty %}
-                <p class="text-muted text-center">No comments yet. Be the first to share your thoughts!</p>
-            {% endfor %}
-   
-        </div>
+            </div>
+        {% empty %}
+            <p class="text-muted text-center">No comments yet. Be the first to share your thoughts!</p>
+        {% endfor %}
     </div>
+</div>
 {% endblock %}

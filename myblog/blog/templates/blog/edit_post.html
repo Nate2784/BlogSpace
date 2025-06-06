@@ -1,0 +1,24 @@
+{% extends "blog/base.html" %}
+
+{% block title %}Edit Post - {{ post.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <!-- Go Back Button -->
+    <a href="javascript:history.back()" class="btn btn-outline-dark mb-3">← Go Back</a>
+
+    <h1 class="text-center mb-4">✏️ Edit Post</h1>
+
+    <div class="card shadow-sm p-4 bg-white rounded">
+        <form method="POST" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+            {{ form.as_p }}
+
+            <div class="d-flex justify-content-end mt-4">
+                <a href="{% url 'post_detail' post.id %}" class="btn btn-secondary me-2">❌ Cancel Editing</a>
+                <button type="submit" class="btn btn-success">✅ Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -3,20 +3,66 @@
 {% block title %}Login{% endblock %}
 
 {% block content %}
-    <div class="container mt-5">
-        <h2 class="text-center">Login</h2>
+<style>
+    body {
+        background: linear-gradient(to right, #74ebd5, #acb6e5);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
 
-        {% if error %}
-            <p class="text-danger text-center">{{ error }}</p>
-        {% endif %}
+    .login-container {
+        max-width: 400px;
+        margin: 80px auto;
+        background: #fff;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        animation: fadeIn 1s ease-in-out;
+    }
 
-        <form method="POST">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit" class="btn btn-primary">Login</button>
-        </form>
-        <p class="text-center mt-3">
-            Don't have an account? <a href="{% url 'register' %}">Sign up</a>
-        </p>
-    </div>
+    h2 {
+        color: #4b4b4b;
+        margin-bottom: 30px;
+    }
+
+    .btn-primary {
+        background-color: #4e54c8;
+        border: none;
+        transition: background-color 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        background-color: #565bde;
+    }
+
+    a {
+        color: #4e54c8;
+    }
+
+    a:hover {
+        text-decoration: underline;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+
+<div class="login-container">
+    <h2 class="text-center">Welcome Back</h2>
+
+    {% if error %}
+        <p class="text-danger text-center">{{ error }}</p>
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary w-100 mt-3">Login</button>
+    </form>
+
+    <p class="text-center mt-4">
+        Don't have an account? <a href="{% url 'register' %}">Sign up</a>
+    </p>
+</div>
 {% endblock %}
