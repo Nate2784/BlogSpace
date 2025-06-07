@@ -4,111 +4,168 @@
 
 {% block content %}
 <style>
-    .filter-bar {
-        max-width: 900px;
-        margin: 0 auto;
-        animation: fadeIn 0.5s ease;
+  .filter-bar {
+    max-width: 900px;
+    margin: 0 auto;
+    animation: fadeIn 0.5s ease;
+  }
+
+  .posts-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    justify-content: center;
+    margin-top: 2rem;
+  }
+
+  .post-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    display: flex;
+    flex-direction: column;
+    flex: 0 0 300px;
+    max-width: 100%;
+  }
+
+  .post-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+  }
+
+  .post-card img {
+    height: 180px;
+    width: 100%;
+    object-fit: cover;
+  }
+
+  .post-card-body {
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+  }
+
+  .post-card-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 0.25rem;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .post-card-title:hover {
+    color: #4e54c8;
+  }
+
+  .post-author {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+  }
+
+  .post-card-text {
+    font-size: 0.95rem;
+    color: #495057;
+    flex-grow: 1;
+  }
+
+  .post-tags {
+    margin-top: 0.5rem;
+  }
+
+  .badge {
+    margin-right: 4px;
+    background: linear-gradient(135deg, #6c63ff, #48c6ef);
+    color: white;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    padding: 6px 10px;
+    text-decoration: none;
+    transition: opacity 0.2s ease;
+  }
+
+  .badge:hover {
+    opacity: 0.85;
+  }
+
+  .read-more-btn {
+    margin-top: 1rem;
+    font-size: 0.875rem;
+    align-self: flex-start;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
     }
 
-    .card {
-        border: none;
-        border-radius: 12px;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    to {
+      opacity: 1;
+      transform: translateY(0);
     }
+  }
 
-    .card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  @media (max-width: 575.98px) {
+    .post-card img {
+      height: 150px;
     }
-
-    .card-img-top {
-        border-top-left-radius: 12px;
-        border-top-right-radius: 12px;
-    }
-
-    .card-title a {
-        text-decoration: none;
-        color: #333;
-        transition: color 0.3s ease;
-    }
-
-    .card-title a:hover {
-        color: #4e54c8;
-    }
-
-    .badge {
-        margin-right: 4px;
-        background: linear-gradient(135deg, #6c63ff, #48c6ef);
-        color: white;
-        border-radius: 50px;
-        font-size: 0.75rem;
-        padding: 6px 10px;
-        transition: opacity 0.2s ease;
-    }
-
-    .badge:hover {
-        opacity: 0.85;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(-10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
+  }
 </style>
 
 <div class="container mt-5">
-    <h1 class="text-center mb-4">📖 Explore Blog Posts</h1>
+  <h1 class="text-center mb-4">📖 Explore Blog Posts</h1>
 
-    <!-- Search & Tag Filter -->
-    <form method="GET" class="filter-bar d-flex flex-wrap gap-2 justify-content-center mb-5">
-        <input type="text" name="q" class="form-control flex-grow-1" placeholder="Search posts..." value="{{ query }}">
-        <select name="tag" class="form-select" style="max-width: 200px;">
-            <option value="">All Tags</option>
-            {% for tag in tags %}
-                <option value="{{ tag.name }}" {% if selected_tag == tag.name %}selected{% endif %}>{{ tag.name }}</option>
+  <!-- Search & Tag Filter -->
+  <form method="GET" class="filter-bar d-flex flex-wrap gap-2 justify-content-center mb-5">
+    <input type="text" name="q" class="form-control flex-grow-1" placeholder="Search posts..." value="{{ query }}">
+    <select name="tag" class="form-select" style="max-width: 200px;">
+      <option value="">All Tags</option>
+      {% for tag in tags %}
+        <option value="{{ tag.name }}" {% if selected_tag == tag.name %}selected{% endif %}>{{ tag.name }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-dark px-4">🔍 Search</button>
+  </form>
+
+  <!-- Posts Grid with Modern Flex Layout -->
+  <div class="posts-grid">
+    {% for post in posts %}
+      <div class="post-card">
+        {% if post.image %}
+          <img src="{{ post.image.url }}" alt="{{ post.title }}">
+        {% else %}
+          <img src="https://via.placeholder.com/400x180?text=No+Image" alt="No image available">
+        {% endif %}
+
+        <div class="post-card-body">
+          <a href="{% url 'post_detail' post.id %}" class="post-card-title">{{ post.title }}</a>
+          <p class="post-author">
+            By <a href="{% url 'author_profile' post.author.username %}" class="text-decoration-none text-primary">
+              {{ post.author.username }}
+            </a>
+          </p>
+          <p class="post-card-text">{{ post.content|truncatewords:20 }}</p>
+
+          <div class="post-tags">
+            {% for tag in post.tags.all %}
+              <a href="{% url 'posts_page' %}?tag={{ tag.name }}" class="badge">#{{ tag.name }}</a>
             {% endfor %}
-        </select>
-        <button type="submit" class="btn btn-dark px-4">🔍 Search</button>
-    </form>
+          </div>
 
-    <!-- Posts Grid -->
-    <div class="row">
-        {% for post in posts %}
-            <div class="col-md-6 col-lg-4 mb-4">
-                <div class="card h-100 shadow-sm">
-                    {% if post.image %}
-                        <img src="{{ post.image.url }}" class="card-img-top" alt="{{ post.title }}">
-                    {% endif %}
-                    <div class="card-body d-flex flex-column">
-                        <h5 class="card-title">
-                            <a href="{% url 'post_detail' post.id %}">{{ post.title }}</a>
-                        </h5>
-                        <p class="text-muted mb-2">By 
-                            <a href="{% url 'author_profile' post.author.username %}" class="text-decoration-none text-primary">
-                                {{ post.author.username }}
-                            </a>
-                        </p>
-                        <p class="card-text text-muted small flex-grow-1">{{ post.content|truncatewords:20 }}</p>
-
-                        <!-- Tags -->
-                        <div class="mt-2">
-                            {% for tag in post.tags.all %}
-                                <a href="{% url 'posts_page' %}?tag={{ tag.name }}" class="badge text-decoration-none">
-                                    #{{ tag.name }}
-                                </a>
-                            {% endfor %}
-                        </div>
-
-                        <a href="{% url 'post_detail' post.id %}" class="btn btn-outline-primary mt-3">Read More</a>
-                    </div>
-                </div>
-            </div>
-        {% empty %}
-            <div class="col-12 text-center text-muted mt-5">
-                <h4>No posts found 💭</h4>
-                <p>Try different keywords or tags.</p>
-            </div>
-        {% endfor %}
-    </div>
+          <a href="{% url 'post_detail' post.id %}" class="btn btn-outline-primary read-more-btn">Read More</a>
+        </div>
+      </div>
+    {% empty %}
+      <div class="col-12 text-center text-muted mt-5">
+        <h4>No posts found 💭</h4>
+        <p>Try different keywords or tags.</p>
+      </div>
+    {% endfor %}
+  </div>
 </div>
 {% endblock %}
