@@ -128,7 +128,6 @@ def delete_post(request, post_id):
 
 from .models import User, Profile, Post
 
-@login_required
 def author_profile(request, username):
     author = get_object_or_404(User, username=username)
     own_posts = Post.objects.filter(author=author)
