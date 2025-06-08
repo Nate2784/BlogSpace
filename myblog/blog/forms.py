@@ -17,9 +17,10 @@ class CustomUserCreationForm(UserCreationForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for  field in self.fields.items():
+        for name, field in self.fields.items():  # <- unpack here
             if field.widget.__class__.__name__ not in ['CheckboxInput', 'ClearableFileInput', 'FileInput']:
                 field.widget.attrs['class'] = field.widget.attrs.get('class', '') + ' form-control'
+
 
 class PostForm(forms.ModelForm):
     new_tags = forms.CharField(
