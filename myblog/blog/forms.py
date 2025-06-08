@@ -2,6 +2,8 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from .models import Profile
+from .models import Post, Tag
+
 
 class CustomUserCreationForm(UserCreationForm):
     first_name = forms.CharField(max_length=30, required=True, widget=forms.TextInput(attrs={"class": "form-control"}))
@@ -13,14 +15,11 @@ class CustomUserCreationForm(UserCreationForm):
         model = User
         fields = ["username", "email", "first_name", "last_name", "password1", "password2", "bio", "profile_picture"]
 
-from .models import Post, Tag
-
-from django import forms
-from django.contrib.auth.models import User
-from .models import Post, Tag
-
-from django import forms
-from .models import Post, Tag
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for  field in self.fields.items():
+            if field.widget.__class__.__name__ not in ['CheckboxInput', 'ClearableFileInput', 'FileInput']:
+                field.widget.attrs['class'] = field.widget.attrs.get('class', '') + ' form-control'
 
 class PostForm(forms.ModelForm):
     new_tags = forms.CharField(
