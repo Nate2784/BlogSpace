@@ -21,22 +21,35 @@ class CustomUserCreationForm(UserCreationForm):
             if field.widget.__class__.__name__ not in ['CheckboxInput', 'ClearableFileInput', 'FileInput']:
                 field.widget.attrs['class'] = field.widget.attrs.get('class', '') + ' form-control'
 
+# blog/forms.py
+from django import forms
+from .models import Post, Tag
 
 class PostForm(forms.ModelForm):
-    new_tags = forms.CharField(
-        required=False, 
-        widget=forms.TextInput(attrs={"placeholder": "Enter new tags, comma-separated"})
+    # Allow selecting multiple authors to tag
+    tagged_authors = forms.ModelMultipleChoiceField(
+        queryset=User.objects.all(),
+        required=False,
+        widget=forms.SelectMultiple(attrs={"class": "form-select"})
     )
-    
+
+    # Existing tags selection
     tags = forms.ModelMultipleChoiceField(
         queryset=Tag.objects.all(),
         required=False,
         widget=forms.SelectMultiple(attrs={"class": "form-select"})
     )
 
+    # Text field for users to type new tags
+    new_tags = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "Enter tags separated by commas"})
+    )
+
     class Meta:
         model = Post
-        fields = ["title", "content", "image", "tags", "new_tags"]
+        fields = ["title", "content", "image", "tags", "new_tags", "tagged_authors"]
+
 
 class UserUpdateForm(forms.ModelForm):
     class Meta:
@@ -55,3 +68,20 @@ class ProfileUpdateForm(forms.ModelForm):
         widgets = {
             'bio': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Write something about yourself...'}),
         }
+
+# blog/forms.py
+from django import forms
+from django.contrib.auth.forms import AuthenticationForm
+
+class LoginForm(AuthenticationForm):
+    def __init__(self, *args, **kwargs):
+        super(LoginForm, self).__init__(*args, **kwargs)
+        self.fields['username'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'Username',
+        })
+        self.fields['password'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'Password',
+        })
+

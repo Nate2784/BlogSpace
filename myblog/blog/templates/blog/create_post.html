@@ -1,179 +1,103 @@
 {% extends "blog/base.html" %}
+{% load static %}
 
-{% block title %}Post a Blog - BlogSpace{% endblock %}
+{% block title %}Create a Blog Post - BlogSpace{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <a href="javascript:history.back()" class="btn btn-outline-dark">
-        ← Go Back
-    </a>
+    <a href="javascript:history.back()" class="btn btn-outline-dark fw-semibold">← Go Back</a>
 </div>
 
 <div class="container mt-5">
-    <h1 class="text-center">✍️ Post a Blog</h1>
+    <div class="card shadow-lg border-0 rounded-4 p-5 bg-white">
+        <h1 class="text-center fw-bold text-primary mb-5">✍️ Create a Blog Post</h1>
 
-    <div class="card shadow-sm p-4 bg-white">
         <form method="POST" enctype="multipart/form-data">
             {% csrf_token %}
-            
-            <div class="mb-3">
-                <label class="form-label fw-bold">Title</label>
-                {{ form.title }}
-            </div>
-            
-            <div class="mb-3">
-                <label class="form-label fw-bold">Content</label>
-                {{ form.content }}
+
+            <!-- Title -->
+            <div class="mb-4">
+                <label for="id_title" class="form-label">Blog Title</label>
+                <input type="text" name="title" id="id_title" class="form-control" value="{{ form.title.value|default_if_none:'' }}">
+                {% for error in form.title.errors %}
+                    <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
             </div>
 
-            <div class="mb-3">
-                <label class="form-label fw-bold">Upload Image (Optional)</label>
-                {{ form.image }}
+            <!-- Content -->
+            <div class="mb-4">
+                <label for="id_content" class="form-label">Write Your Content</label>
+                <textarea name="content" id="id_content" class="form-control" rows="6">{{ form.content.value|default_if_none:'' }}</textarea>
+                {% for error in form.content.errors %}
+                    <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
             </div>
 
-            <!-- Tag Selection -->
-            <div class="mb-3">
-                <label class="form-label fw-bold">Tags (Select or Add New)</label>
-                <select name="tags" id="tagDropdown" class="form-select" multiple>
-                    <option value="">🆓 No Tag</option> <!-- Option to select no tag -->
-                    {% for tag in form.tags.field.queryset %}
-                        <option value="{{ tag.id }}">{{ tag.name }}</option>
-                    {% endfor %}
-                </select>
-                <input type="text" id="newTagInput" name="new_tags" class="form-control mt-2" placeholder="Add new tag if not listed">
-                <button type="button" id="addNewTagBtn" class="btn btn-outline-success mt-2">➕ Add New Tag</button>
-                <div id="selectedTags" class="mt-2"></div> <!-- Display selected tags -->
+            <!-- Image -->
+            <div class="mb-4">
+                <label for="id_image" class="form-label">Upload Featured Image (Optional)</label>
+                <input type="file" name="image" id="id_image" class="form-control">
+                {% for error in form.image.errors %}
+                    <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
             </div>
 
-            <!-- Author Selection -->
-            <div class="mb-3 position-relative">
-                <label class="form-label fw-bold">Tag Other Authors (Optional)</label>
-                <input type="text" id="tagged_authors" name="tagged_authors" class="form-control" placeholder="Search & tag authors">
-                <div id="authorSuggestions" class="dropdown-menu position-absolute w-100"></div>
-                <div id="selectedAuthors" class="mt-2"></div> <!-- Display selected authors -->
+            <!-- Tags -->
+            <div class="mb-4">
+                <label for="id_tags" class="form-label">Select Existing Tags</label>
+                {{ form.tags }}
             </div>
 
-            <button type="submit" class="btn btn-primary w-100">Publish Blog</button>
+            <!-- New Tags -->
+            <div class="mb-4">
+                <label for="id_new_tags" class="form-label">Create New Tags (comma-separated)</label>
+                <input type="text" name="new_tags" id="id_new_tags" class="form-control" value="{{ form.new_tags.value|default_if_none:'' }}">
+            </div>
+
+            <!-- Tagged Authors -->
+            <div class="mb-4">
+                <label for="id_tagged_authors" class="form-label">Tag Other Authors (Optional)</label>
+                {{ form.tagged_authors }}
+            </div>
+
+            <!-- Submit -->
+            <div class="d-grid">
+                <button type="submit" class="btn btn-primary btn-lg rounded-pill shadow">📢 Publish Blog</button>
+            </div>
         </form>
     </div>
 </div>
 
-<!-- JavaScript -->
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    /** Tag Selection */
-    let tagDropdown = document.getElementById("tagDropdown");
-    let newTagInput = document.getElementById("newTagInput");
-    let addNewTagBtn = document.getElementById("addNewTagBtn");
-    let selectedTagsDiv = document.getElementById("selectedTags");
-    let selectedTags = [];
-
-    // Handle tag selection from dropdown
-    tagDropdown.addEventListener("change", function () {
-        selectedTags = Array.from(tagDropdown.selectedOptions).filter(opt => opt.value !== "").map(opt => opt.textContent);
-        displaySelectedTags();
-    });
-
-    // Add new tags dynamically
-    addNewTagBtn.addEventListener("click", function () {
-        let newTag = newTagInput.value.trim();
-        if (newTag.length > 1 && !selectedTags.includes(newTag)) {
-            let newOption = document.createElement("option");
-            newOption.value = newTag;
-            newOption.textContent = newTag;
-            newOption.selected = true;
-            tagDropdown.appendChild(newOption);
-
-            selectedTags.push(newTag);
-            displaySelectedTags();
-            newTagInput.value = "";
-        }
-    });
-
-    // Display selected tags with remove option
-    function displaySelectedTags() {
-        selectedTagsDiv.innerHTML = "";
-        selectedTags.forEach(tag => {
-            let tagElement = document.createElement("span");
-            tagElement.classList.add("badge", "bg-secondary", "me-2", "p-2");
-            tagElement.textContent = tag;
-
-            let removeBtn = document.createElement("span");
-            removeBtn.innerHTML = " ❌";
-            removeBtn.style.cursor = "pointer";
-            removeBtn.onclick = function () {
-                selectedTags = selectedTags.filter(t => t !== tag);
-                displaySelectedTags();
-
-                let optionToRemove = Array.from(tagDropdown.options).find(opt => opt.textContent === tag);
-                if (optionToRemove) optionToRemove.selected = false;
-            };
-
-            tagElement.appendChild(removeBtn);
-            selectedTagsDiv.appendChild(tagElement);
-        });
+<!-- Styling -->
+<style>
+    body {
+        background-color: #f8f9fa;
     }
 
-    /** Author Selection */
-    let authorInput = document.getElementById("tagged_authors");
-    let authorDropdown = document.getElementById("authorSuggestions");
-    let selectedAuthorsDiv = document.getElementById("selectedAuthors");
-    let selectedAuthors = [];
-
-    authorInput.addEventListener("input", function () {
-        let query = authorInput.value.trim();
-        if (query.length > 1) {
-            fetch(`/search-authors/?q=${query}`)
-            .then(response => response.json())
-            .then(data => {
-                authorDropdown.innerHTML = "";
-                
-                if (data.authors.length > 0) {
-                    authorDropdown.classList.add("show");
-                    data.authors.forEach(author => {
-                        let option = document.createElement("div");
-                        option.classList.add("dropdown-item");
-                        option.textContent = author.username;
-                        option.onclick = () => {
-                            if (!selectedAuthors.includes(author.username)) {
-                                selectedAuthors.push(author.username);
-                                displaySelectedAuthors();
-                            }
-                            authorInput.value = "";
-                            authorDropdown.innerHTML = "";
-                            authorDropdown.classList.remove("show");
-                        };
-                        authorDropdown.appendChild(option);
-                    });
-                } else {
-                    authorDropdown.innerHTML = `<div class="dropdown-item text-danger">User not found</div>`;
-                    authorDropdown.classList.add("show");
-                }
-            });
-        } else {
-            authorDropdown.classList.remove("show");
-        }
-    });
-
-    function displaySelectedAuthors() {
-        selectedAuthorsDiv.innerHTML = "";
-        selectedAuthors.forEach(author => {
-            let authorTag = document.createElement("span");
-            authorTag.classList.add("badge", "bg-secondary", "me-2", "p-2");
-            authorTag.textContent = author;
-
-            let removeBtn = document.createElement("span");
-            removeBtn.innerHTML = " ❌";
-            removeBtn.style.cursor = "pointer";
-            removeBtn.onclick = function () {
-                selectedAuthors = selectedAuthors.filter(a => a !== author);
-                displaySelectedAuthors();
-            };
-
-            authorTag.appendChild(removeBtn);
-            selectedAuthorsDiv.appendChild(authorTag);
-        });
+    .form-label {
+        font-weight: 600;
     }
-});
-</script>
+
+    .form-control {
+        border-radius: 10px;
+        padding: 12px;
+        font-size: 1rem;
+    }
+
+    .btn-primary {
+        background-color: #0d6efd;
+        border: none;
+        font-size: 1.1rem;
+        transition: 0.2s ease-in-out;
+    }
+
+    .btn-primary:hover {
+        background-color: #0a58ca;
+        transform: scale(1.02);
+    }
+
+    .card {
+        border-radius: 20px;
+    }
+</style>
 {% endblock %}

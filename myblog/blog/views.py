@@ -29,29 +29,43 @@ def posts(request):
         "selected_tag": selected_tag
     })
 
-from django.shortcuts import render, redirect
-from .models import Post, Tag
-from .forms import PostForm
 from django.contrib.auth.decorators import login_required
+# blog/views.py
+from django.shortcuts import render, redirect, get_object_or_404
+from .forms import PostForm
+from .models import Post, Tag
 
-@login_required
 def create_post(request):
     if request.method == "POST":
         form = PostForm(request.POST, request.FILES)
+
         if form.is_valid():
             post = form.save(commit=False)
             post.author = request.user
             post.save()
 
-            # Handling new tags creation
-            new_tags = request.POST.get("new_tags")
-            if new_tags:
-                tag_names = [tag.strip() for tag in new_tags.split(",")]
-                for tag_name in tag_names:
-                    tag, created = Tag.objects.get_or_create(name=tag_name)
+            form.save_m2m()  # Save selected tags
+
+            # Process new tags without duplicates
+            new_tag_names = request.POST.get("new_tags", "").strip()
+            if new_tag_names:
+                tag_list = {tag.strip() for tag in new_tag_names.split(",") if tag.strip()}  # Deduplicate input
+                existing_tags = Tag.objects.filter(name__in=tag_list)  # Fetch existing tags
+                
+                # Add existing tags to the post
+                for tag in existing_tags:
                     post.tags.add(tag)
 
-            form.save_m2m()  # Save many-to-many relationships
+                # Create only new tags and link them
+                new_tags_to_create = tag_list - set(existing_tags.values_list("name", flat=True))
+                for tag_name in new_tags_to_create:
+                    tag, _ = Tag.objects.get_or_create(name=tag_name)  # Create new tag if needed
+                    post.tags.add(tag)
+
+            # Handle tagged authors
+            tagged_authors = form.cleaned_data.get("tagged_authors")
+            post.tagged_authors.set(tagged_authors)
+
             return redirect("post_detail", post.id)
     else:
         form = PostForm()
@@ -202,26 +216,24 @@ def register(request):
 
     return render(request, "blog/register.html", {"form": form})
 
-from django.shortcuts import render, redirect
+# blog/views.py
 from django.contrib.auth import authenticate, login
-from django.contrib.auth.forms import AuthenticationForm
+from django.shortcuts import render, redirect
+from .forms import LoginForm
 
 def custom_login(request):
     if request.method == "POST":
-        form = AuthenticationForm(request, request.POST)
-        username = request.POST.get("username")
-        password = request.POST.get("password")
-        user = authenticate(request, username=username, password=password)
-
-        if user is not None:
+        form = LoginForm(request, data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
             login(request, user)
-            return redirect("home")  # Redirect to homepage after login
+            return redirect("home")
         else:
             return render(request, "blog/login.html", {"form": form, "error": "Invalid username or password"})
     else:
-        form = AuthenticationForm()
-
+        form = LoginForm()
     return render(request, "blog/login.html", {"form": form})
+
 
 from django.contrib.auth import logout
 from django.shortcuts import redirect
