@@ -13,6 +13,12 @@ class CustomUserCreationForm(UserCreationForm):
         model = User
         fields = ["username", "email", "first_name", "last_name", "password1", "password2", "bio", "profile_picture"]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name, field in self.fields.items():
+            if field.widget.__class__.__name__ not in ['CheckboxInput', 'ClearableFileInput', 'FileInput']:
+                field.widget.attrs['class'] = field.widget.attrs.get('class', '') + ' form-control'
+
 from .models import Post, Tag
 
 from django import forms
