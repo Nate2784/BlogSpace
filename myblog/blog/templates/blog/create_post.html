@@ -45,19 +45,33 @@
             <!-- Tags -->
             <div class="mb-4">
                 <label for="id_tags" class="form-label">Select Existing Tags</label>
+                <small class="text-muted d-block mb-2">Hold Ctrl (or Cmd on Mac) to select multiple tags</small>
                 {{ form.tags }}
+                {% for error in form.tags.errors %}
+                    <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
             </div>
 
             <!-- New Tags -->
             <div class="mb-4">
                 <label for="id_new_tags" class="form-label">Create New Tags (comma-separated)</label>
-                <input type="text" name="new_tags" id="id_new_tags" class="form-control" value="{{ form.new_tags.value|default_if_none:'' }}">
+                <small class="text-muted d-block mb-2">Example: technology, programming, web development</small>
+                <input type="text" name="new_tags" id="id_new_tags" class="form-control"
+                       value="{{ form.new_tags.value|default_if_none:'' }}"
+                       placeholder="Enter tags separated by commas">
+                {% for error in form.new_tags.errors %}
+                    <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
             </div>
 
             <!-- Tagged Authors -->
             <div class="mb-4">
                 <label for="id_tagged_authors" class="form-label">Tag Other Authors (Optional)</label>
+                <small class="text-muted d-block mb-2">Hold Ctrl (or Cmd on Mac) to select multiple authors</small>
                 {{ form.tagged_authors }}
+                {% for error in form.tagged_authors.errors %}
+                    <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
             </div>
 
             <!-- Submit -->
@@ -99,5 +113,136 @@
     .card {
         border-radius: 20px;
     }
+
+    /* Multi-select styling */
+    select[multiple] {
+        min-height: 120px;
+        border-radius: 10px;
+        padding: 8px;
+    }
+
+    select[multiple] option {
+        padding: 5px 8px;
+        margin: 2px 0;
+    }
+
+    select[multiple] option:checked {
+        background-color: #0d6efd;
+        color: white;
+    }
+
+    .selected-items {
+        margin-top: 10px;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+    }
+
+    .selected-items strong {
+        color: #495057;
+        font-size: 0.9em;
+    }
+
+    .selected-item {
+        display: inline-block;
+        background-color: #e9ecef;
+        padding: 4px 8px;
+        margin: 2px;
+        border-radius: 15px;
+        font-size: 0.9em;
+        position: relative;
+        padding-right: 25px;
+    }
+
+    .remove-item {
+        position: absolute;
+        right: 6px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 16px;
+        height: 16px;
+        font-size: 10px;
+        line-height: 1;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .remove-item:hover {
+        background: #c82333;
+    }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add helper text for multi-select fields
+    const tagSelect = document.getElementById('id_tags');
+    const authorSelect = document.getElementById('id_tagged_authors');
+
+    // Function to remove item from select
+    function removeFromSelect(selectElement, optionText) {
+        const options = Array.from(selectElement.options);
+        const optionToDeselect = options.find(option => option.text === optionText);
+        if (optionToDeselect) {
+            optionToDeselect.selected = false;
+            // Trigger change event to update display
+            selectElement.dispatchEvent(new Event('change'));
+        }
+    }
+
+    // Function to show selected items with remove buttons
+    function showSelectedItems(selectElement, containerId) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        const selected = Array.from(selectElement.selectedOptions);
+
+        if (selected.length > 0) {
+            container.innerHTML = selected.map(option =>
+                `<span class="selected-item">
+                    ${option.text}
+                    <button type="button" class="remove-item" onclick="removeItem('${containerId}', '${selectElement.id}', '${option.text.replace(/'/g, "\\'")}')">×</button>
+                </span>`
+            ).join('');
+        } else {
+            container.innerHTML = '<small class="text-muted">None selected</small>';
+        }
+    }
+
+    // Global function to remove items (accessible from onclick)
+    window.removeItem = function(containerId, selectId, itemText) {
+        const selectElement = document.getElementById(selectId);
+        removeFromSelect(selectElement, itemText);
+    };
+
+    // Create containers for showing selected items
+    if (tagSelect) {
+        const tagContainer = document.createElement('div');
+        tagContainer.id = 'selected-tags';
+        tagContainer.className = 'selected-items';
+        tagContainer.innerHTML = '<div class="mb-2"><strong>Selected Tags:</strong></div>';
+        tagSelect.parentNode.appendChild(tagContainer);
+
+        tagSelect.addEventListener('change', () => showSelectedItems(tagSelect, 'selected-tags'));
+        showSelectedItems(tagSelect, 'selected-tags'); // Initial display
+    }
+
+    if (authorSelect) {
+        const authorContainer = document.createElement('div');
+        authorContainer.id = 'selected-authors';
+        authorContainer.className = 'selected-items';
+        authorContainer.innerHTML = '<div class="mb-2"><strong>Tagged Authors:</strong></div>';
+        authorSelect.parentNode.appendChild(authorContainer);
+
+        authorSelect.addEventListener('change', () => showSelectedItems(authorSelect, 'selected-authors'));
+        showSelectedItems(authorSelect, 'selected-authors'); // Initial display
+    }
+});
+</script>
 {% endblock %}

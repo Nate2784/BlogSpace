@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Remove Functionality</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .selected-items {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .selected-items strong {
+            color: #495057;
+            font-size: 0.9em;
+        }
+
+        .selected-item {
+            display: inline-block;
+            background-color: #e9ecef;
+            padding: 4px 8px;
+            margin: 2px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            position: relative;
+            padding-right: 25px;
+        }
+
+        .remove-item {
+            position: absolute;
+            right: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            font-size: 10px;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .remove-item:hover {
+            background: #c82333;
+        }
+
+        select {
+            width: 100%;
+            height: 120px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Remove Functionality</h1>
+    <p>This page tests the remove functionality for selected tags and authors.</p>
+
+    <h3>Tags</h3>
+    <select multiple id="id_tags">
+        <option value="1">Python</option>
+        <option value="2">Django</option>
+        <option value="3">JavaScript</option>
+        <option value="4">React</option>
+        <option value="5">Web Development</option>
+    </select>
+
+    <h3>Authors</h3>
+    <select multiple id="id_tagged_authors">
+        <option value="1">Alice</option>
+        <option value="2">Bob</option>
+        <option value="3">Charlie</option>
+        <option value="4">Diana</option>
+    </select>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add helper text for multi-select fields
+            const tagSelect = document.getElementById('id_tags');
+            const authorSelect = document.getElementById('id_tagged_authors');
+            
+            // Function to remove item from select
+            function removeFromSelect(selectElement, optionText) {
+                const options = Array.from(selectElement.options);
+                const optionToDeselect = options.find(option => option.text === optionText);
+                if (optionToDeselect) {
+                    optionToDeselect.selected = false;
+                    // Trigger change event to update display
+                    selectElement.dispatchEvent(new Event('change'));
+                }
+            }
+            
+            // Function to show selected items with remove buttons
+            function showSelectedItems(selectElement, containerId) {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+                
+                const selected = Array.from(selectElement.selectedOptions);
+                
+                if (selected.length > 0) {
+                    container.innerHTML = selected.map(option => 
+                        `<span class="selected-item">
+                            ${option.text}
+                            <button type="button" class="remove-item" onclick="removeItem('${containerId}', '${selectElement.id}', '${option.text.replace(/'/g, "\\'")}')">×</button>
+                        </span>`
+                    ).join('');
+                } else {
+                    container.innerHTML = '<small class="text-muted">None selected</small>';
+                }
+            }
+            
+            // Global function to remove items (accessible from onclick)
+            window.removeItem = function(containerId, selectId, itemText) {
+                const selectElement = document.getElementById(selectId);
+                removeFromSelect(selectElement, itemText);
+            };
+            
+            // Create containers for showing selected items
+            if (tagSelect) {
+                const tagContainer = document.createElement('div');
+                tagContainer.id = 'selected-tags';
+                tagContainer.className = 'selected-items';
+                tagContainer.innerHTML = '<div class="mb-2"><strong>Selected Tags:</strong></div>';
+                tagSelect.parentNode.appendChild(tagContainer);
+                
+                tagSelect.addEventListener('change', () => showSelectedItems(tagSelect, 'selected-tags'));
+                showSelectedItems(tagSelect, 'selected-tags'); // Initial display
+            }
+            
+            if (authorSelect) {
+                const authorContainer = document.createElement('div');
+                authorContainer.id = 'selected-authors';
+                authorContainer.className = 'selected-items';
+                authorContainer.innerHTML = '<div class="mb-2"><strong>Tagged Authors:</strong></div>';
+                authorSelect.parentNode.appendChild(authorContainer);
+                
+                authorSelect.addEventListener('change', () => showSelectedItems(authorSelect, 'selected-authors'));
+                showSelectedItems(authorSelect, 'selected-authors'); // Initial display
+            }
+        });
+    </script>
+
+    <div style="margin-top: 30px; padding: 20px; background-color: #e7f3ff; border-radius: 8px;">
+        <h4>📋 Instructions:</h4>
+        <ol>
+            <li>Hold Ctrl/Cmd and click multiple items in the dropdowns above</li>
+            <li>Selected items will appear below each dropdown with an "×" button</li>
+            <li>Click the "×" button to remove items from selection</li>
+            <li>The dropdown selection will automatically update</li>
+        </ol>
+    </div>
+</body>
+</html>

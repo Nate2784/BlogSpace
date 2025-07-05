@@ -44,27 +44,27 @@ def create_post(request):
             post.author = request.user
             post.save()
 
-            form.save_m2m()  # Save selected tags
+            # Clear existing tags first to avoid duplicates
+            post.tags.clear()
+
+            # Handle existing tags from form
+            selected_tags = form.cleaned_data.get("tags")
+            if selected_tags:
+                post.tags.set(selected_tags)
 
             # Process new tags without duplicates
             new_tag_names = request.POST.get("new_tags", "").strip()
             if new_tag_names:
                 tag_list = {tag.strip() for tag in new_tag_names.split(",") if tag.strip()}  # Deduplicate input
-                existing_tags = Tag.objects.filter(name__in=tag_list)  # Fetch existing tags
-                
-                # Add existing tags to the post
-                for tag in existing_tags:
-                    post.tags.add(tag)
 
-                # Create only new tags and link them
-                new_tags_to_create = tag_list - set(existing_tags.values_list("name", flat=True))
-                for tag_name in new_tags_to_create:
-                    tag, _ = Tag.objects.get_or_create(name=tag_name)  # Create new tag if needed
+                for tag_name in tag_list:
+                    tag, created = Tag.objects.get_or_create(name=tag_name)
                     post.tags.add(tag)
 
             # Handle tagged authors
             tagged_authors = form.cleaned_data.get("tagged_authors")
-            post.tagged_authors.set(tagged_authors)
+            if tagged_authors:
+                post.tagged_authors.set(tagged_authors)
 
             return redirect("post_detail", post.id)
     else:
@@ -123,10 +123,40 @@ def edit_post(request, post_id):
     if request.method == "POST":
         form = PostForm(request.POST, request.FILES, instance=post)
         if form.is_valid():
-            form.save()
+            # Save the post but don't commit to handle tags manually
+            updated_post = form.save(commit=False)
+            updated_post.save()
+
+            # Clear existing tags first to avoid duplicates
+            updated_post.tags.clear()
+
+            # Handle existing tags from form
+            selected_tags = form.cleaned_data.get("tags")
+            if selected_tags:
+                updated_post.tags.set(selected_tags)
+
+            # Process new tags without duplicates
+            new_tag_names = request.POST.get("new_tags", "").strip()
+            if new_tag_names:
+                tag_list = {tag.strip() for tag in new_tag_names.split(",") if tag.strip()}  # Deduplicate input
+
+                for tag_name in tag_list:
+                    tag, created = Tag.objects.get_or_create(name=tag_name)
+                    updated_post.tags.add(tag)
+
+            # Handle tagged authors
+            tagged_authors = form.cleaned_data.get("tagged_authors")
+            if tagged_authors:
+                updated_post.tagged_authors.set(tagged_authors)
+            else:
+                updated_post.tagged_authors.clear()
+
             return redirect("post_detail", post_id=post.id)
     else:
+        # Pre-populate the new_tags field with existing tags that aren't in the dropdown
+        existing_tag_names = [tag.name for tag in post.tags.all()]
         form = PostForm(instance=post)
+        # You could add logic here to separate existing tags from new ones if needed
 
     return render(request, "blog/edit_post.html", {"form": form, "post": post})
 

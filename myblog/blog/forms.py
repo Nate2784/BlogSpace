@@ -30,25 +30,39 @@ class PostForm(forms.ModelForm):
     tagged_authors = forms.ModelMultipleChoiceField(
         queryset=User.objects.all(),
         required=False,
-        widget=forms.SelectMultiple(attrs={"class": "form-select"})
+        widget=forms.SelectMultiple(attrs={
+            "class": "form-select",
+            "size": "6"  # Show 6 options at once
+        })
     )
 
     # Existing tags selection
     tags = forms.ModelMultipleChoiceField(
         queryset=Tag.objects.all(),
         required=False,
-        widget=forms.SelectMultiple(attrs={"class": "form-select"})
+        widget=forms.SelectMultiple(attrs={
+            "class": "form-select",
+            "size": "6"  # Show 6 options at once
+        })
     )
 
     # Text field for users to type new tags
     new_tags = forms.CharField(
         required=False,
-        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "Enter tags separated by commas"})
+        widget=forms.TextInput(attrs={
+            "class": "form-control",
+            "placeholder": "Enter tags separated by commas"
+        })
     )
 
     class Meta:
         model = Post
         fields = ["title", "content", "image", "tags", "new_tags", "tagged_authors"]
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control'}),
+            'content': forms.Textarea(attrs={'class': 'form-control', 'rows': 6}),
+            'image': forms.FileInput(attrs={'class': 'form-control'}),
+        }
 
 
 class UserUpdateForm(forms.ModelForm):
