@@ -1,6 +1,6 @@
 from django.utils.deprecation import MiddlewareMixin
 from django.urls import resolve
-from .models import PostView, Post
+from .models import PostView, Post, UserAnalytics
 from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import timedelta
@@ -25,22 +25,33 @@ class PostViewTrackingMiddleware(MiddlewareMixin):
         return None
     
     def track_post_view(self, request, post_id):
-        """Track a post view with time-based throttling."""
+        """Track a post view with intelligent throttling."""
         try:
             post = Post.objects.get(id=post_id)
             user = request.user if request.user.is_authenticated else None
             ip_address = self.get_client_ip(request)
             user_agent = request.META.get('HTTP_USER_AGENT', '')
 
-            # Check if this user/IP has viewed this post in the last hour
-            one_hour_ago = timezone.now() - timedelta(hours=1)
-
-            recent_view = PostView.objects.filter(
-                post=post,
-                user=user,
-                ip_address=ip_address,
-                viewed_at__gte=one_hour_ago
-            ).first()
+            # Different throttling rules for different scenarios
+            if user and user.is_authenticated:
+                # For authenticated users: 15 minutes throttling
+                throttle_time = timezone.now() - timedelta(minutes=15)
+                recent_view = PostView.objects.filter(
+                    post=post,
+                    user=user,
+                    viewed_at__gte=throttle_time
+                ).first()
+                identifier = f"user:{user.username}"
+            else:
+                # For anonymous users: 30 minutes throttling by IP
+                throttle_time = timezone.now() - timedelta(minutes=30)
+                recent_view = PostView.objects.filter(
+                    post=post,
+                    user=None,
+                    ip_address=ip_address,
+                    viewed_at__gte=throttle_time
+                ).first()
+                identifier = f"ip:{ip_address}"
 
             # Only create a new view if no recent view exists
             if not recent_view:
@@ -50,14 +61,22 @@ class PostViewTrackingMiddleware(MiddlewareMixin):
                     ip_address=ip_address,
                     user_agent=user_agent
                 )
-                print(f"New view tracked: {post.title} by {user or ip_address}")
+                print(f"✅ View tracked: '{post.title}' by {identifier}")
+
+                # Update analytics immediately
+                try:
+                    analytics, created = UserAnalytics.objects.get_or_create(user=post.author)
+                    analytics.update_analytics()
+                except Exception as e:
+                    print(f"Analytics update error: {e}")
+
             else:
-                print(f"View throttled: {post.title} by {user or ip_address} (recent view exists)")
+                print(f"⏱️ View throttled: '{post.title}' by {identifier} (viewed {recent_view.viewed_at})")
 
         except Post.DoesNotExist:
-            pass  # Post doesn't exist, ignore
+            print(f"❌ Post {post_id} not found")
         except Exception as e:
-            print(f"Error tracking view: {e}")  # Debug: Print errors
+            print(f"❌ Error tracking view: {e}")
     
     def get_client_ip(self, request):
         """Get the client's IP address."""

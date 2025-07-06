@@ -1,0 +1,26 @@
+services:
+  # Django Web Application (Development)
+  web:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=True
+      - SECRET_KEY=django-insecure-so5!pqmgf46+pqe7qftp(biojd@3rlv1!txc1gghmy0pko2p&t
+      - ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
+      - DATABASE_URL=sqlite:///db.sqlite3
+      - DJANGO_SETTINGS_MODULE=myblog.settings
+    volumes:
+      - .:/app
+      - ./media:/app/media
+      - static_volume:/app/staticfiles
+    command: python manage.py runserver 0.0.0.0:8000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+volumes:
+  static_volume:

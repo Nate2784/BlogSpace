@@ -161,36 +161,10 @@ from django.db.models import Count, Q
 from datetime import datetime, timedelta
 from django.utils import timezone
 
-@login_required
 def post_detail(request, post_id):
     post = get_object_or_404(Post, id=post_id)
 
-    # Manually track the view
-    user = request.user if request.user.is_authenticated else None
-    ip_address = request.META.get('REMOTE_ADDR', '127.0.0.1')
-    user_agent = request.META.get('HTTP_USER_AGENT', '')
-
-    # Check if this user/IP has viewed this post in the last hour
-    from django.utils import timezone
-    from datetime import timedelta
-
-    one_hour_ago = timezone.now() - timedelta(hours=1)
-    recent_view = PostView.objects.filter(
-        post=post,
-        user=user,
-        ip_address=ip_address,
-        viewed_at__gte=one_hour_ago
-    ).first()
-
-    # Only create a new view if no recent view exists
-    if not recent_view:
-        PostView.objects.create(
-            post=post,
-            user=user,
-            ip_address=ip_address,
-            user_agent=user_agent
-        )
-        print(f"View tracked for post: {post.title}")
+    # View tracking is handled by middleware, no need to duplicate here
 
     # Get only top-level comments (not replies)
     comments = post.comments.filter(parent=None).order_by('created_at')
