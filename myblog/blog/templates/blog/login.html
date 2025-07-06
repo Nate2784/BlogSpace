@@ -1,110 +1,440 @@
 {% extends "blog/base.html" %}
 
-{% block title %}Login{% endblock %}
+{% block title %}Login - BlogSpace{% endblock %}
 
 {% block content %}
 <style>
-    body {
-        background: linear-gradient(to right, #74ebd5, #acb6e5);
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    :root {
+        --primary-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
+        --secondary-gradient: linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #8b5cf6 100%);
+        --success-gradient: linear-gradient(135deg, #10b981, #059669);
+        --danger-gradient: linear-gradient(135deg, #ef4444, #dc2626);
     }
 
+    /* Modern Login Page Background */
+    .login-page {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .login-page::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background:
+            radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+            radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+            radial-gradient(circle at 40% 40%, rgba(120, 119, 198, 0.2) 0%, transparent 50%);
+        pointer-events: none;
+    }
+
+    /* Modern Login Container */
     .login-container {
-        max-width: 400px;
-        margin: 80px auto;
-        background: #fff;
-        padding: 30px;
-        border-radius: 15px;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-        animation: fadeIn 1s ease-in-out;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-radius: 24px;
+        padding: 3rem 2.5rem;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        width: 100%;
+        max-width: 450px;
+        position: relative;
+        overflow: hidden;
+        animation: slideInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    h2 {
-        color: #4b4b4b;
-        margin-bottom: 30px;
+    .login-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(circle at 30% 20%, rgba(99, 102, 241, 0.05) 0%, transparent 50%);
+        pointer-events: none;
     }
 
-    .btn-primary {
-        background-color: #4e54c8;
-        border: none;
-        transition: background-color 0.3s ease;
+    .login-content {
+        position: relative;
+        z-index: 2;
     }
 
-    .btn-primary:hover {
-        background-color: #565bde;
+    /* Modern Header */
+    .login-header {
+        text-align: center;
+        margin-bottom: 3rem;
     }
 
-    a {
-        color: #4e54c8;
+    .login-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 2.5rem;
+        font-weight: 700;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 0.5rem;
     }
 
-    a:hover {
-        text-decoration: underline;
+    .login-subtitle {
+        color: #64748b;
+        font-size: 1.1rem;
+        font-weight: 500;
     }
 
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(-20px);
-        }
+    .login-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 20px;
+        background: var(--primary-gradient);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        margin: 0 auto 2rem;
+        box-shadow: 0 15px 35px rgba(99, 102, 241, 0.3);
+    }
 
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+    /* Modern Form Fields */
+    .form-group {
+        margin-bottom: 2rem;
+        position: relative;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 0.75rem;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
     }
 
     .form-control {
-        width: 100%;
-        padding: 10px 12px;
+        border: 2px solid rgba(99, 102, 241, 0.1);
+        border-radius: 12px;
+        padding: 1rem 1.25rem 1rem 3rem;
         font-size: 1rem;
-        border-radius: 8px;
-        border: 1px solid #ccc;
-        box-sizing: border-box;
-        transition: border-color 0.3s ease;
+        transition: all 0.3s ease;
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(10px);
+        width: 100%;
     }
 
     .form-control:focus {
-        border-color: #4e54c8;
-        box-shadow: 0 0 0 3px rgba(78, 84, 200, 0.2);
+        border-color: #6366f1;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        background: white;
         outline: none;
+        transform: translateY(-2px);
     }
 
-    label {
+    .form-control::placeholder {
+        color: #9ca3af;
+        font-style: italic;
+    }
+
+    /* Input Icons */
+    .input-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6366f1;
+        font-size: 1.1rem;
+        z-index: 3;
+    }
+
+    .form-group {
+        position: relative;
+    }
+
+    /* Modern Submit Button */
+    .login-btn {
+        background: var(--primary-gradient);
+        color: white;
+        border: none;
+        padding: 1.25rem 2rem;
+        border-radius: 50px;
+        font-weight: 700;
+        font-size: 1.1rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+        margin-top: 1rem;
+    }
+
+    .login-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        transition: left 0.6s ease;
+    }
+
+    .login-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 35px rgba(99, 102, 241, 0.4);
+    }
+
+    .login-btn:hover::before {
+        left: 100%;
+    }
+
+    .login-btn:active {
+        transform: translateY(-1px);
+    }
+
+    /* Error Messages */
+    .error-message {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        color: #dc2626;
+        padding: 1rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
         font-weight: 500;
-        margin-bottom: 5px;
-        display: block;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .field-error {
+        color: #dc2626;
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    /* Sign Up Link */
+    .signup-link {
+        text-align: center;
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid rgba(99, 102, 241, 0.1);
+    }
+
+    .signup-link a {
+        color: #6366f1;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+    }
+
+    .signup-link a:hover {
+        background: rgba(99, 102, 241, 0.1);
+        transform: translateY(-1px);
+    }
+
+    /* Animations */
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px) scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    /* Loading State */
+    .login-btn.loading {
+        pointer-events: none;
+    }
+
+    .login-btn.loading::after {
+        content: '';
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: spin 1s ease-in-out infinite;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    @keyframes spin {
+        to { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 576px) {
+        .login-container {
+            padding: 2rem 1.5rem;
+            margin: 1rem;
+        }
+
+        .login-title {
+            font-size: 2rem;
+        }
+
+        .login-icon {
+            width: 60px;
+            height: 60px;
+            font-size: 2rem;
+        }
     }
 </style>
 
-<div class="login-container">
-    <h2 class="text-center">Welcome Back</h2>
+<div class="login-page">
+    <div class="login-container">
+        <div class="login-content">
+            <!-- Login Header -->
+            <div class="login-header">
+                <div class="login-icon">
+                    <i class="fas fa-feather-alt"></i>
+                </div>
+                <h1 class="login-title">Welcome Back</h1>
+                <p class="login-subtitle">Sign in to your BlogSpace account</p>
+            </div>
 
-    {% if error %}
-    <p class="text-danger text-center">{{ error }}</p>
-    {% endif %}
-
-    <form method="POST">
-        {% csrf_token %}
-        {% for field in form %}
-        <div class="mb-3">
-            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-            {{ field }}
-            {% if field.help_text %}
-            <div class="form-text">{{ field.help_text }}</div>
+            <!-- Error Messages -->
+            {% if error %}
+                <div class="error-message">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>{{ error }}</span>
+                </div>
             {% endif %}
-            {% for error in field.errors %}
-            <div class="text-danger small">{{ error }}</div>
-            {% endfor %}
+
+            <!-- Login Form -->
+            <form method="POST" id="login-form">
+                {% csrf_token %}
+
+                {% for field in form %}
+                    <div class="form-group">
+                        <label class="form-label" for="{{ field.id_for_label }}">
+                            {% if field.name == 'username' %}
+                                <i class="fas fa-user"></i>
+                            {% elif field.name == 'password' %}
+                                <i class="fas fa-lock"></i>
+                            {% endif %}
+                            {{ field.label }}
+                        </label>
+                        <div style="position: relative;">
+                            {% if field.name == 'username' %}
+                                <i class="fas fa-user input-icon"></i>
+                            {% elif field.name == 'password' %}
+                                <i class="fas fa-lock input-icon"></i>
+                            {% endif %}
+                            {{ field }}
+                        </div>
+
+                        {% if field.help_text %}
+                            <div class="form-text mt-2">{{ field.help_text }}</div>
+                        {% endif %}
+
+                        {% for error in field.errors %}
+                            <div class="field-error">
+                                <i class="fas fa-exclamation-circle"></i>
+                                {{ error }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+
+                <!-- Submit Button -->
+                <button type="submit" class="login-btn" id="login-submit">
+                    <span class="btn-text">
+                        <i class="fas fa-sign-in-alt me-2"></i>
+                        Sign In
+                    </span>
+                </button>
+            </form>
+
+            <!-- Sign Up Link -->
+            <div class="signup-link">
+                <p class="mb-0">
+                    Don't have an account?
+                    <a href="{% url 'register' %}">
+                        <i class="fas fa-user-plus me-1"></i>
+                        Create Account
+                    </a>
+                </p>
+            </div>
         </div>
-        {% endfor %}
-
-
-        <button type="submit" class="btn btn-primary w-100 mt-3">Login</button>
-    </form>
-
-    <p class="text-center mt-4">
-        Don't have an account? <a href="{% url 'register' %}">Sign up</a>
-    </p>
+    </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add Bootstrap classes to form fields
+    const formControls = document.querySelectorAll('input[type="text"], input[type="password"]');
+    formControls.forEach(function(control) {
+        control.classList.add('form-control');
+
+        // Add placeholders
+        if (control.name === 'username') {
+            control.placeholder = 'Enter your username';
+        } else if (control.name === 'password') {
+            control.placeholder = 'Enter your password';
+        }
+    });
+
+    // Form submission with loading state
+    const form = document.getElementById('login-form');
+    const submitBtn = document.getElementById('login-submit');
+
+    form.addEventListener('submit', function(e) {
+        submitBtn.classList.add('loading');
+        submitBtn.disabled = true;
+
+        const btnText = submitBtn.querySelector('.btn-text');
+        btnText.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Signing In...';
+
+        // Re-enable button after 5 seconds (in case of errors)
+        setTimeout(function() {
+            submitBtn.classList.remove('loading');
+            submitBtn.disabled = false;
+            btnText.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i>Sign In';
+        }, 5000);
+    });
+
+    // Add focus effects to form fields
+    const inputs = document.querySelectorAll('.form-control');
+    inputs.forEach(function(input) {
+        input.addEventListener('focus', function() {
+            this.parentElement.style.transform = 'translateY(-2px)';
+        });
+
+        input.addEventListener('blur', function() {
+            this.parentElement.style.transform = 'translateY(0)';
+        });
+    });
+
+    // Keyboard shortcut for form submission (Enter key)
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && (e.target.tagName === 'INPUT')) {
+            form.submit();
+        }
+    });
+});
+</script>
+
 {% endblock %}

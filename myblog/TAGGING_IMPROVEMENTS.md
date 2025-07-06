@@ -173,3 +173,21 @@ The tagging system is now fully functional! You can:
 - Trust that the system handles edge cases properly
 
 **Ready to use in production!** 🎉
+
+---
+
+## 🆕 **Latest Updates**
+
+### User Search with Autocomplete
+- **Replaced dropdown selection** with intelligent search interface
+- **Real-time autocomplete** with profile pictures
+- **Smart user tagging** - type to search and select
+- **Visual management** - tagged users shown as removable badges
+
+### Authentication Protection
+- **Protected blog content** from unauthenticated users
+- **Login prompts** for accessing posts and profiles
+- **Secure redirects** to login page
+- **Professional user experience** with clear access boundaries
+
+See `USER_SEARCH_AND_AUTH_IMPROVEMENTS.md` for detailed documentation of these new features.

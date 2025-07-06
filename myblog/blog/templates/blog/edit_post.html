@@ -72,10 +72,12 @@
 
             <!-- Tagged Authors -->
             <div class="mb-4">
-                <label for="id_tagged_authors" class="form-label">Tag Other Authors (Optional)</label>
-                <small class="text-muted d-block mb-2">Hold Ctrl (or Cmd on Mac) to select multiple authors</small>
-                {{ form.tagged_authors }}
-                {% for error in form.tagged_authors.errors %}
+                <label for="user-search-input" class="form-label">Tag Other Authors (Optional)</label>
+                <small class="text-muted d-block mb-2">Type to search and select users to tag</small>
+                {{ form.tagged_authors_search }}
+                <div id="user-search-results" class="user-search-results"></div>
+                <input type="hidden" name="tagged_author_ids" id="tagged-author-ids" value="{% for author in post.tagged_authors.all %}{{ author.id }}{% if not forloop.last %},{% endif %}{% endfor %}">
+                {% for error in form.tagged_authors_search.errors %}
                     <div class="text-danger small mt-1">{{ error }}</div>
                 {% endfor %}
             </div>
@@ -184,13 +186,100 @@
     .remove-item:hover {
         background: #c82333;
     }
+
+    /* User search autocomplete styles */
+    .user-search-results {
+        position: relative;
+        background: white;
+        border: 1px solid #ddd;
+        border-top: none;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1000;
+        display: none;
+    }
+
+    .user-search-item {
+        padding: 10px;
+        cursor: pointer;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        align-items: center;
+    }
+
+    .user-search-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    .user-search-item img {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        margin-right: 10px;
+    }
+
+    .user-search-item .user-info {
+        flex-grow: 1;
+    }
+
+    .user-search-item .username {
+        font-weight: bold;
+        color: #333;
+    }
+
+    .user-search-item .full-name {
+        font-size: 0.9em;
+        color: #666;
+    }
+
+    .tagged-users-container {
+        margin-top: 10px;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+    }
+
+    .tagged-user {
+        display: inline-block;
+        background-color: #007bff;
+        color: white;
+        padding: 4px 8px;
+        margin: 2px;
+        border-radius: 15px;
+        font-size: 0.9em;
+        position: relative;
+        padding-right: 25px;
+    }
+
+    .tagged-user .remove-user {
+        position: absolute;
+        right: 6px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(255,255,255,0.3);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 16px;
+        height: 16px;
+        font-size: 10px;
+        line-height: 1;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .tagged-user .remove-user:hover {
+        background: rgba(255,255,255,0.5);
+    }
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Add helper text for multi-select fields
     const tagSelect = document.getElementById('id_tags');
-    const authorSelect = document.getElementById('id_tagged_authors');
 
     // Function to remove item from select
     function removeFromSelect(selectElement, optionText) {
@@ -240,15 +329,130 @@ document.addEventListener('DOMContentLoaded', function() {
         showSelectedItems(tagSelect, 'selected-tags'); // Initial display
     }
 
-    if (authorSelect) {
-        const authorContainer = document.createElement('div');
-        authorContainer.id = 'selected-authors';
-        authorContainer.className = 'selected-items';
-        authorContainer.innerHTML = '<div class="mb-2"><strong>Tagged Authors:</strong></div>';
-        authorSelect.parentNode.appendChild(authorContainer);
+    // User search functionality
+    const userSearchInput = document.getElementById('user-search-input');
+    const userSearchResults = document.getElementById('user-search-results');
+    const taggedAuthorIds = document.getElementById('tagged-author-ids');
+    let taggedUsers = [];
+    let searchTimeout;
 
-        authorSelect.addEventListener('change', () => showSelectedItems(authorSelect, 'selected-authors'));
-        showSelectedItems(authorSelect, 'selected-authors'); // Initial display
+    if (userSearchInput) {
+        // Pre-populate existing tagged authors
+        const existingAuthorIds = taggedAuthorIds.value.split(',').filter(id => id.trim());
+        if (existingAuthorIds.length > 0) {
+            // Fetch existing author details
+            Promise.all(existingAuthorIds.map(id =>
+                fetch(`/api/search-users/?q=`)
+                    .then(response => response.json())
+                    .then(data => data.users.find(user => user.id == id))
+            )).then(authors => {
+                taggedUsers = authors.filter(author => author);
+                updateTaggedUsersDisplay();
+            });
+        }
+
+        // Create tagged users container
+        const taggedUsersContainer = document.createElement('div');
+        taggedUsersContainer.id = 'tagged-users-container';
+        taggedUsersContainer.className = 'tagged-users-container';
+        taggedUsersContainer.innerHTML = '<div class="mb-2"><strong>Tagged Authors:</strong></div>';
+        userSearchInput.parentNode.appendChild(taggedUsersContainer);
+
+        userSearchInput.addEventListener('input', function() {
+            const query = this.value.trim();
+
+            clearTimeout(searchTimeout);
+
+            if (query.length < 2) {
+                userSearchResults.style.display = 'none';
+                return;
+            }
+
+            searchTimeout = setTimeout(() => {
+                fetch(`/api/search-users/?q=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        displayUserSearchResults(data.users);
+                    })
+                    .catch(error => {
+                        console.error('Error searching users:', error);
+                    });
+            }, 300);
+        });
+
+        function displayUserSearchResults(users) {
+            if (users.length === 0) {
+                userSearchResults.style.display = 'none';
+                return;
+            }
+
+            userSearchResults.innerHTML = users.map(user => `
+                <div class="user-search-item" onclick="selectUser(${user.id}, '${user.username}', '${user.display_name}')">
+                    ${user.profile_picture ? `<img src="${user.profile_picture}" alt="${user.username}">` : '<div style="width: 30px; height: 30px; background: #ccc; border-radius: 50%; margin-right: 10px;"></div>'}
+                    <div class="user-info">
+                        <div class="username">${user.username}</div>
+                        <div class="full-name">${user.display_name}</div>
+                    </div>
+                </div>
+            `).join('');
+
+            userSearchResults.style.display = 'block';
+        }
+
+        window.selectUser = function(userId, username, displayName) {
+            // Check if user is already tagged
+            if (taggedUsers.find(user => user.id === userId)) {
+                return;
+            }
+
+            // Add user to tagged list
+            taggedUsers.push({
+                id: userId,
+                username: username,
+                display_name: displayName
+            });
+
+            // Update hidden input
+            taggedAuthorIds.value = taggedUsers.map(user => user.id).join(',');
+
+            // Update display
+            updateTaggedUsersDisplay();
+
+            // Clear search
+            userSearchInput.value = '';
+            userSearchResults.style.display = 'none';
+        };
+
+        window.removeTaggedUser = function(userId) {
+            taggedUsers = taggedUsers.filter(user => user.id !== userId);
+            taggedAuthorIds.value = taggedUsers.map(user => user.id).join(',');
+            updateTaggedUsersDisplay();
+        };
+
+        function updateTaggedUsersDisplay() {
+            const container = document.getElementById('tagged-users-container');
+            if (taggedUsers.length > 0) {
+                container.innerHTML = '<div class="mb-2"><strong>Tagged Authors:</strong></div>' +
+                    taggedUsers.map(user => `
+                        <span class="tagged-user">
+                            ${user.username}
+                            <button type="button" class="remove-user" onclick="removeTaggedUser(${user.id})">×</button>
+                        </span>
+                    `).join('');
+            } else {
+                container.innerHTML = '<div class="mb-2"><strong>Tagged Authors:</strong></div><small class="text-muted">None selected</small>';
+            }
+        }
+
+        // Hide search results when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!userSearchInput.contains(event.target) && !userSearchResults.contains(event.target)) {
+                userSearchResults.style.display = 'none';
+            }
+        });
+
+        // Initial display update
+        updateTaggedUsersDisplay();
     }
 });
 </script>

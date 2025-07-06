@@ -25,12 +25,16 @@ urlpatterns = [
     path("", home, name="home"),
 
     path("posts/", posts, name="posts_page"),
+    path("posts/load-more/", load_more_posts, name="load_more_posts"),
+    path("author/<str:username>/load-more/", load_more_author_posts, name="load_more_author_posts"),
     path("create-post/", create_post, name="create_post"),
     path("post/<int:post_id>/", post_detail, name="post_detail"),
     path("post/<int:post_id>/like/", like_post, name="like_post"),
     path("post/<int:post_id>/edit/", edit_post, name="edit_post"),
-     path("post/<int:post_id>/delete/", delete_post, name="delete_post"),
+    path("post/<int:post_id>/delete/", delete_post, name="delete_post"),
+    path("comment/<int:comment_id>/delete/", delete_comment, name="delete_comment"),
 
+    path('dashboard/', dashboard, name='dashboard'),
     path('profile/edit/', edit_profile, name='edit_profile'),
     path('profile/change-password/', change_password, name='change_password'),
     path('profile/<str:username>/', author_profile, name='author_profile'),
@@ -41,6 +45,7 @@ urlpatterns = [
 
     path("search-authors/", search_authors, name="search_authors"),
     path("search-tags/", search_tags, name="search_tags"),
+    path("api/search-users/", search_users, name="search_users"),
 ]
 
 from django.conf import settings

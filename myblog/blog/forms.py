@@ -26,13 +26,13 @@ from django import forms
 from .models import Post, Tag
 
 class PostForm(forms.ModelForm):
-    # Allow selecting multiple authors to tag
-    tagged_authors = forms.ModelMultipleChoiceField(
-        queryset=User.objects.all(),
+    # Text field for user search with autocomplete
+    tagged_authors_search = forms.CharField(
         required=False,
-        widget=forms.SelectMultiple(attrs={
-            "class": "form-select",
-            "size": "6"  # Show 6 options at once
+        widget=forms.TextInput(attrs={
+            "class": "form-control",
+            "placeholder": "Type to search and tag users...",
+            "id": "user-search-input"
         })
     )
 
@@ -57,7 +57,7 @@ class PostForm(forms.ModelForm):
 
     class Meta:
         model = Post
-        fields = ["title", "content", "image", "tags", "new_tags", "tagged_authors"]
+        fields = ["title", "content", "image", "tags", "new_tags"]
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control'}),
             'content': forms.Textarea(attrs={'class': 'form-control', 'rows': 6}),

@@ -5,12 +5,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
+    <!-- Modern Favicons -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📝</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📝</text></svg>">
+    <meta name="theme-color" content="#6366f1">
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="BlogSpace - A modern platform for writers and readers to connect through stories">
+    <meta name="keywords" content="blog, writing, stories, community, publishing">
+    <meta name="author" content="BlogSpace">
+
     <!-- Bootstrap CSS & JS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- Custom Styles -->
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Modern Custom Styles -->
     <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
+            --secondary-gradient: linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #8b5cf6 100%);
+            --dark-gradient: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+        }
+
         html, body {
             height: 100%;
             margin: 0;
@@ -19,92 +45,288 @@
         body {
             display: flex;
             flex-direction: column;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f9f9fb;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            line-height: 1.6;
         }
 
         main {
             flex: 1;
         }
 
-        .navbar {
-            background: linear-gradient(to right, #141e30, #243b55);
+        /* Modern Navbar Styling */
+        .modern-navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
         }
 
-        .navbar-brand, .nav-link {
-            transition: color 0.3s ease;
+        .navbar-brand {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-decoration: none;
+            transition: all 0.3s ease;
         }
 
-        .navbar-brand:hover, .nav-link:hover {
-            color: #ffc107 !important;
+        .navbar-brand:hover {
+            transform: scale(1.05);
+            filter: brightness(1.1);
         }
-        .navbar .nav-link {
-    text-decoration: none !important;
-}
 
-.navbar .nav-link:hover {
-    text-decoration: none !important;
-    color: #ffc107 !important; /* Optional: still keeps the color highlight on hover */
-}
+        .nav-link {
+            color: #64748b !important;
+            font-weight: 500;
+            text-decoration: none !important;
+            padding: 0.75rem 1rem !important;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
 
+        .nav-link::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: var(--primary-gradient);
+            transition: left 0.3s ease;
+            z-index: -1;
+            opacity: 0.1;
+        }
+
+        .nav-link:hover {
+            color: #6366f1 !important;
+            background: rgba(99, 102, 241, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .nav-link:hover::before {
+            left: 0;
+        }
+
+        .nav-link.active {
+            background: var(--primary-gradient);
+            color: white !important;
+        }
 
         .dropdown-menu {
-            animation: dropdownFade 0.3s ease;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            animation: dropdownSlide 0.3s ease;
+            padding: 0.5rem;
         }
 
-        @keyframes dropdownFade {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .dropdown-item {
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+            color: #64748b;
+            font-weight: 500;
         }
 
-        footer {
-            background: linear-gradient(to right, #141e30, #243b55);
-            color: #f1f1f1;
+        .dropdown-item:hover {
+            background: var(--primary-gradient);
+            color: white;
+            transform: translateX(5px);
         }
 
-        footer a {
-            color: #ffc107;
+        .dropdown-item.text-danger:hover {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+
+        @keyframes dropdownSlide {
+            from {
+                opacity: 0;
+                transform: translateY(-10px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .profile-img {
+            border: 2px solid var(--primary-gradient);
+            transition: all 0.3s ease;
+        }
+
+        .profile-img:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        /* Simple Modern Footer */
+        .modern-footer {
+            background: var(--dark-gradient);
+            color: white;
+            padding: 2rem 0;
+            margin-top: auto;
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            flex-shrink: 0;
+        }
+
+        .modern-footer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .footer-content {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        .footer-brand {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: flex;
+            align-items: center;
             text-decoration: none;
+            transition: all 0.3s ease;
         }
 
-        footer a:hover {
-            text-decoration: underline;
+        .footer-brand:hover {
+            transform: scale(1.05);
+            filter: brightness(1.1);
+        }
+
+        .footer-copyright {
+            color: #94a3b8;
+            font-size: 0.95rem;
+            font-weight: 400;
+            text-align: center;
+            flex: 1;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .navbar-brand {
+                font-size: 1.5rem;
+            }
+
+            .footer-content {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .footer-brand {
+                font-size: 1.5rem;
+            }
+
+            .footer-copyright {
+                text-align: center;
+                flex: none;
+            }
         }
     </style>
 </head>
 <body>
 
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm">
+    <!-- Modern Navbar -->
+    <nav class="navbar navbar-expand-lg modern-navbar">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="{% url 'home' %}">🚀 BlogSpace</a>
-            <a class="nav-link fw-bold text-white ms-3" href="{% url 'posts_page' %}">📖 Blogs</a>
+            <a class="navbar-brand" href="{% url 'home' %}">
+                <i class="fas fa-feather-alt me-2"></i>BlogSpace
+            </a>
 
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+            <div class="d-flex align-items-center d-lg-none">
+                <a class="nav-link me-3" href="{% url 'posts_page' %}">
+                    <i class="fas fa-compass me-1"></i>Explore
+                </a>
+                <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <i class="fas fa-bars text-muted"></i>
+                </button>
+            </div>
 
             <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto d-none d-lg-flex">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'posts_page' %}">
+                            <i class="fas fa-compass me-2"></i>Explore Stories
+                        </a>
+                    </li>
+                    {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'create_post' %}">
+                                <i class="fas fa-plus-circle me-2"></i>Write
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+
                 <ul class="navbar-nav ms-auto">
                     {% if user.is_authenticated %}
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle d-flex align-items-center" id="userDropdown" data-bs-toggle="dropdown" role="button">
-                                <img src="{{ user.profile.profile_picture.url }}" class="rounded-circle me-2" width="30" height="30" alt="Profile Picture">
-                                {{ user.username }}
+                            <a class="nav-link dropdown-toggle d-flex align-items-center" id="userDropdown" data-bs-toggle="dropdown" role="button" aria-expanded="false">
+                                {% if user.profile.profile_picture %}
+                                    <img src="{{ user.profile.profile_picture.url }}" class="rounded-circle me-2 profile-img" width="35" height="35" alt="Profile Picture">
+                                {% else %}
+                                    <div class="rounded-circle me-2 profile-img d-flex align-items-center justify-content-center" style="width: 35px; height: 35px; background: var(--primary-gradient); color: white; font-weight: bold;">
+                                        {{ user.username|first|upper }}
+                                    </div>
+                                {% endif %}
+                                <span class="d-none d-md-inline">{{ user.username }}</span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="{% url 'author_profile' user.username %}">👤 Profile</a></li>
-                                <li><a class="dropdown-item" href="{% url 'create_post' %}">✍️ Post a Blog</a></li>
+                                <li><a class="dropdown-item" href="{% url 'dashboard' %}">
+                                    <i class="fas fa-chart-pie me-2"></i>Dashboard
+                                </a></li>
+                                <li><a class="dropdown-item" href="{% url 'author_profile' user.username %}">
+                                    <i class="fas fa-user me-2"></i>My Profile
+                                </a></li>
+                                <li><a class="dropdown-item d-lg-none" href="{% url 'create_post' %}">
+                                    <i class="fas fa-pen me-2"></i>Write Post
+                                </a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item text-danger" href="{% url 'logout' %}">🚪 Logout</a></li>
+                                <li><a class="dropdown-item text-danger" href="{% url 'logout' %}">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                </a></li>
                             </ul>
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a href="{% url 'login' %}" class="nav-link">🔐 Login</a>
+                            <a href="{% url 'login' %}" class="nav-link">
+                                <i class="fas fa-sign-in-alt me-2"></i>Login
+                            </a>
                         </li>
                         <li class="nav-item">
-                            <a href="{% url 'register' %}" class="nav-link">📝 Sign Up</a>
+                            <a href="{% url 'register' %}" class="nav-link">
+                                <i class="fas fa-user-plus me-2"></i>Sign Up
+                            </a>
                         </li>
                     {% endif %}
                 </ul>
@@ -119,9 +341,19 @@
         {% endblock %}
     </main>
 
-    <!-- Footer -->
-    <footer class="text-center py-4 mt-auto">
-        © 2025 <strong>BlogSpace</strong> — Connect Through Writing 🚀
+    <!-- Simple Modern Footer -->
+    <footer class="modern-footer">
+        <div class="container">
+            <div class="footer-content">
+                <a href="{% url 'home' %}" class="footer-brand">
+                    <i class="fas fa-feather-alt me-2"></i>BlogSpace
+                </a>
+                <div class="footer-copyright">
+                    <i class="fas fa-copyright me-2"></i>
+                    2025 <strong>BlogSpace</strong>. All rights reserved.
+                </div>
+            </div>
+        </div>
     </footer>
 
 </body>

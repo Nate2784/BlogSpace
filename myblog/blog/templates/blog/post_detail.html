@@ -1,133 +1,862 @@
 {% extends "blog/base.html" %}
 
-{% block title %}{{ post.title }}{% endblock %}
+{% block title %}{{ post.title }} - BlogSpace{% endblock %}
 
 {% block content %}
 <style>
-    .post-title {
-        font-size: 2.2rem;
-        color: #333;
+    :root {
+        --primary-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
+        --secondary-gradient: linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #8b5cf6 100%);
+        --accent-gradient: linear-gradient(135deg, #f59e0b 0%, #ef4444 50%, #ec4899 100%);
+        --success-gradient: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        --glass-bg: rgba(255, 255, 255, 0.1);
+        --glass-border: rgba(255, 255, 255, 0.2);
     }
 
-    .post-meta {
-        font-size: 0.95rem;
-        color: #888;
+    /* Modern Article Container */
+    .article-container {
+        max-width: 900px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 24px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        overflow: hidden;
+        position: relative;
     }
 
-    .comment-box textarea {
-        resize: vertical;
-        min-height: 100px;
+    .article-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 6px;
+        background: var(--primary-gradient);
     }
 
-    .comment-body {
-        background-color: #f8f9fa;
-        border-radius: 0.5rem;
-        padding: 1rem;
+    /* Hero Image Section */
+    .article-hero {
+        position: relative;
+        height: 400px;
+        overflow: hidden;
+        background: linear-gradient(135deg, #f8fafc, #e2e8f0);
     }
 
-    .badge-rounded {
-        border-radius: 50px;
-        background: linear-gradient(135deg, #6a11cb, #2575fc);
+    .article-hero img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+
+    .article-hero:hover img {
+        transform: scale(1.02);
+    }
+
+    .article-hero-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 50%;
+        background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+    }
+
+    .article-hero-placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        background: var(--primary-gradient);
         color: white;
-        padding: 6px 12px;
-        font-size: 0.8rem;
     }
 
-    .like-btn {
+    /* Article Header */
+    .article-header {
+        padding: 3rem 3rem 2rem;
+        position: relative;
+    }
+
+    .article-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 3rem;
+        font-weight: 700;
+        color: #1e293b;
+        line-height: 1.2;
+        margin-bottom: 2rem;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .article-meta {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        background: #f8fafc;
+        border-radius: 16px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .author-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .author-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .author-avatar-placeholder {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: var(--primary-gradient);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        border: 3px solid white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .author-details h6 {
+        margin: 0;
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    .author-details small {
+        color: #64748b;
+    }
+
+    .article-stats {
+        display: flex;
+        gap: 1.5rem;
+        margin-left: auto;
+    }
+
+    .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        font-size: 0.9rem;
+        color: #64748b;
+    }
+
+    .stat-item i {
+        color: #6366f1;
+    }
+
+    /* Article Content */
+    .article-content {
+        padding: 0 3rem 3rem;
+        font-size: 1.1rem;
+        line-height: 1.8;
+        color: #374151;
+    }
+
+    .article-content p {
+        margin-bottom: 1.5rem;
+    }
+
+    /* Tags Section */
+    .article-tags {
+        padding: 2rem 3rem;
+        border-top: 1px solid #f1f5f9;
+        background: #f8fafc;
+    }
+
+    .tag-item {
+        display: inline-block;
+        background: rgba(99, 102, 241, 0.08);
+        color: #6366f1;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        text-decoration: none;
+        margin: 0.25rem;
+        border: 1px solid rgba(99, 102, 241, 0.2);
         transition: all 0.3s ease;
     }
 
-    .like-btn:hover {
-        opacity: 0.9;
+    .tag-item::before {
+        content: '#';
+        margin-right: 0.25rem;
+        opacity: 0.7;
     }
 
-    /* New classes for paragraphs */
-    .lead {
-        font-size: 1.25rem;
-        font-weight: 400;
-        margin-bottom: 1.6rem;
-        line-height: 1.8;
+    .tag-item:hover {
+        background: rgba(99, 102, 241, 0.15);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
     }
 
-    .lead-indent {
-        text-indent: 2em;
+    /* Action Buttons */
+    .article-actions {
+        padding: 2rem 3rem;
+        border-top: 1px solid #f1f5f9;
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .action-btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-like {
+        background: var(--primary-gradient);
+        color: white;
+    }
+
+    .btn-like:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+        color: white;
+    }
+
+    .btn-edit {
+        background: var(--success-gradient);
+        color: white;
+    }
+
+    .btn-edit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+        color: white;
+    }
+
+    .btn-delete {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+    }
+
+    .btn-delete:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
+        color: white;
+    }
+
+    /* Additional button styling for better interaction */
+    .btn-liked {
+        background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+        color: white !important;
+    }
+
+    .action-btn:active {
+        transform: translateY(0px) !important;
+    }
+
+    /* Comments Section */
+    .comments-section {
+        background: #f8fafc;
+        padding: 3rem;
+        margin-top: 3rem;
+        border-radius: 24px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .comments-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+
+    .comments-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 1rem;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    /* Comment Form */
+    .comment-form {
+        background: white;
+        padding: 2rem;
+        border-radius: 20px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+        margin-bottom: 3rem;
+        border: 1px solid #e2e8f0;
+    }
+
+    .comment-form textarea {
+        border: 2px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 1rem;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        resize: vertical;
+        min-height: 120px;
+        background: #f8fafc;
+    }
+
+    .comment-form textarea:focus {
+        outline: none;
+        border-color: #6366f1;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    .comment-submit-btn {
+        background: var(--primary-gradient);
+        color: white;
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 16px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .comment-submit-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+        color: white;
+    }
+
+    /* Individual Comments */
+    .comment-item {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        border: 1px solid #e2e8f0;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .comment-item::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: var(--primary-gradient);
+        border-radius: 2px 0 0 2px;
+    }
+
+    .comment-item:hover {
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+
+    .comment-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+    }
+
+    .comment-author-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .comment-avatar {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #e2e8f0;
+    }
+
+    .comment-avatar-placeholder {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        background: var(--primary-gradient);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        border: 2px solid #e2e8f0;
+    }
+
+    .comment-author-details h6 {
+        margin: 0;
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    .comment-author-details small {
+        color: #64748b;
+    }
+
+    .comment-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .comment-action-btn {
+        padding: 0.5rem 1rem;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        border: 1px solid #e2e8f0;
+        background: white;
+        color: #64748b;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .comment-action-btn:hover {
+        background: #6366f1;
+        color: white;
+        border-color: #6366f1;
+        transform: translateY(-1px);
+    }
+
+    .comment-delete-btn {
+        background: #fef2f2;
+        color: #ef4444;
+        border-color: #fecaca;
+    }
+
+    .comment-delete-btn:hover {
+        background: #ef4444;
+        color: white;
+        border-color: #ef4444;
+    }
+
+    .comment-content {
+        background: #f8fafc;
+        padding: 1.5rem;
+        border-radius: 16px;
+        border: 1px solid #e2e8f0;
+        margin: 1rem 0;
+        line-height: 1.6;
+        color: #374151;
+    }
+
+    /* Reply Form */
+    .reply-form {
+        margin-top: 1.5rem;
+        padding: 1.5rem;
+        background: #f0f9ff;
+        border-radius: 16px;
+        border-left: 4px solid #6366f1;
+        border: 1px solid #dbeafe;
+    }
+
+    .reply-form textarea {
+        border: 2px solid #dbeafe;
+        background: white;
+    }
+
+    .reply-form textarea:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    /* Reply Comments */
+    .reply-comment {
+        margin-left: 3rem;
+        margin-top: 1.5rem;
+        border-left: 3px solid #e2e8f0;
+        padding-left: 2rem;
+        position: relative;
+    }
+
+    .reply-comment::before {
+        content: '';
+        position: absolute;
+        left: -3px;
+        top: 0;
+        width: 3px;
+        height: 30px;
+        background: var(--primary-gradient);
+    }
+
+    .reply-badge {
+        background: var(--primary-gradient);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-left: 0.5rem;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .article-container {
+            margin: 1rem;
+            border-radius: 16px;
+        }
+
+        .article-header,
+        .article-content,
+        .article-tags,
+        .article-actions {
+            padding: 2rem 1.5rem;
+        }
+
+        .article-title {
+            font-size: 2rem;
+        }
+
+        .article-meta {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .article-stats {
+            margin-left: 0;
+        }
+
+        .comments-section {
+            padding: 2rem 1.5rem;
+            margin: 1rem;
+            border-radius: 16px;
+        }
+
+        .reply-comment {
+            margin-left: 1rem;
+            padding-left: 1rem;
+        }
+    }
+
+    /* Animation Classes */
+    .animate-fade-in-up {
+        animation: fadeInUp 0.6s ease-out;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 </style>
 
-<div class="container mt-5">
-    <!-- Go Back -->
-    <a href="javascript:history.back()" class="btn btn-outline-dark mb-3">← Go Back</a>
-
-    <!-- Edit/Delete Buttons -->
-    {% if user == post.author %}
-        <div class="d-flex justify-content-end mb-3">
-            <a href="{% url 'edit_post' post.id %}" class="btn btn-warning me-2">✏️ Edit</a>
-            <button class="btn btn-danger" onclick="confirmDelete()">🗑️ Delete</button>
-        </div>
-    {% endif %}
-
-    <!-- Featured Image -->
-    {% if post.image %}
-        <div class="text-center mb-4">
-            <img src="{{ post.image.url }}" alt="{{ post.title }}"
-                 class="img-fluid rounded shadow w-100" style="max-height: 500px; object-fit: cover;">
-        </div>
-    {% endif %}
-
-    <!-- Post Info -->
-    <div class="text-center mb-4">
-        <h1 class="fw-bold post-title">{{ post.title }}</h1>
-        <p class="post-meta">
-            By <a href="{% url 'author_profile' post.author.username %}" class="fw-bold text-primary text-decoration-none">
-                {{ post.author.username }}
-            </a> • {{ post.created_at|date:"F j, Y" }}
-        </p>
+<!-- Modern Article Layout -->
+<div class="container py-4">
+    <!-- Back Navigation -->
+    <div class="mb-4">
+        <a href="javascript:history.back()" class="btn btn-outline-secondary d-inline-flex align-items-center gap-2">
+            <i class="fas fa-arrow-left"></i>
+            <span>Back to Posts</span>
+        </a>
     </div>
 
-    <!-- Content -->
-    <article class="px-md-5 py-4 border-top border-bottom">
-    {% for paragraph in formatted_content %}
-        <p class="lead {% if forloop.first %}lead-indent{% endif %}">
-            {{ paragraph }}
-        </p>
-    {% endfor %}
-    </article>
+    <!-- Main Article Container -->
+    <div class="article-container animate-fade-in-up">
+        <!-- Hero Image Section -->
+        <div class="article-hero">
+            {% if post.image %}
+                <img src="{{ post.image.url }}" alt="{{ post.title }}" loading="lazy">
+                <div class="article-hero-overlay"></div>
+            {% else %}
+                <div class="article-hero-placeholder">
+                    <div class="text-center">
+                        <i class="fas fa-file-alt" style="font-size: 4rem; margin-bottom: 1rem;"></i>
+                        <h3>{{ post.title }}</h3>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
 
-    <script>
-        function confirmDelete() {
-            if (confirm("Are you sure you want to delete this post? This action cannot be undone.")) {
-                window.location.href = "{% url 'delete_post' post.id %}";
-            }
-        }
-    </script>
+        <!-- Article Header -->
+        <div class="article-header">
+            <h1 class="article-title">{{ post.title }}</h1>
 
-    <!-- Tagged Authors -->
-    {% if post.tagged_authors.all %}
-        <div class="mt-4">
-            <h5 class="fw-bold">🖊️ Tagged Authors:</h5>
-            <ul class="list-inline">
-                {% for tagged_author in post.tagged_authors.all %}
-                    <li class="list-inline-item">
-                        <a href="{% url 'author_profile' tagged_author.username %}" class="badge badge-rounded text-decoration-none">
-                            {{ tagged_author.username }}
-                        </a>
-                    </li>
+            <div class="article-meta">
+                <div class="author-info">
+                    {% if post.author.profile.profile_picture %}
+                        <img src="{{ post.author.profile.profile_picture.url }}" alt="{{ post.author.username }}" class="author-avatar">
+                    {% else %}
+                        <div class="author-avatar-placeholder">
+                            {{ post.author.username|first|upper }}
+                        </div>
+                    {% endif %}
+                    <div class="author-details">
+                        <h6>
+                            <a href="{% url 'author_profile' post.author.username %}" class="text-decoration-none text-dark">
+                                {{ post.author.username }}
+                            </a>
+                        </h6>
+                        <small>Published {{ post.created_at|date:"F j, Y" }}</small>
+                    </div>
+                </div>
+
+                <div class="article-stats">
+                    <div class="stat-item">
+                        <i class="fas fa-eye"></i>
+                        <span>{{ post.views.count }} views</span>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-heart"></i>
+                        <span>{{ post.total_likes }} likes</span>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-comments"></i>
+                        <span>{{ post.comments.count }} comments</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Article Content -->
+        <div class="article-content">
+            {% for paragraph in formatted_content %}
+                <p>{{ paragraph }}</p>
+            {% endfor %}
+        </div>
+
+        <!-- Tags Section -->
+        {% if post.tags.all %}
+            <div class="article-tags">
+                <h6 class="mb-3 fw-bold text-muted">
+                    <i class="fas fa-tags me-2"></i>Topics
+                </h6>
+                {% for tag in post.tags.all %}
+                    <a href="{% url 'posts_page' %}?tag={{ tag.name }}" class="tag-item">
+                        {{ tag.name }}
+                    </a>
                 {% endfor %}
-            </ul>
+            </div>
+        {% endif %}
+
+        <!-- Tagged Authors -->
+        {% if post.tagged_authors.all %}
+            <div class="article-tags">
+                <h6 class="mb-3 fw-bold text-muted">
+                    <i class="fas fa-user-tag me-2"></i>Tagged Authors
+                </h6>
+                {% for tagged_author in post.tagged_authors.all %}
+                    <a href="{% url 'author_profile' tagged_author.username %}" class="tag-item">
+                        {{ tagged_author.username }}
+                    </a>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Action Buttons -->
+        <div class="article-actions">
+            {% if user.is_authenticated %}
+                <button id="like-btn" class="action-btn btn-like">
+                    <i class="fas fa-heart"></i>
+                    <span id="like-text">
+                        {% if user in post.likes.all %}Unlike{% else %}Like{% endif %}
+                    </span>
+                    <span id="like-count">({{ post.total_likes }})</span>
+                </button>
+            {% endif %}
+
+            {% if user == post.author %}
+                <a href="{% url 'edit_post' post.id %}" class="action-btn btn-edit">
+                    <i class="fas fa-edit"></i>
+                    <span>Edit Post</span>
+                </a>
+                <button class="action-btn btn-delete" onclick="confirmDelete()">
+                    <i class="fas fa-trash"></i>
+                    <span>Delete Post</span>
+                </button>
+            {% endif %}
         </div>
-    {% endif %}
-
-    <!-- Likes -->
-    {% if user.is_authenticated %}
-    <div class="mt-4">
-        <h5 id="like-count" class="fw-bold mb-2">❤️ Likes: {{ post.total_likes }}</h5>
-        <button id="like-btn"
-                class="btn {% if user in post.likes.all %}btn-danger{% else %}btn-outline-primary{% endif %} btn-lg like-btn">
-            {% if user in post.likes.all %}❤️ Unlike{% else %}👍 Like{% endif %}
-        </button>
     </div>
+</div>
 
-    <script>
+<!-- Comments Section -->
+<div class="container">
+    <div class="comments-section animate-fade-in-up">
+        <div class="comments-header">
+            <h2 class="comments-title">
+                <i class="fas fa-comments me-3"></i>
+                Join the Conversation
+            </h2>
+            <p class="text-muted">Share your thoughts and engage with other readers</p>
+        </div>
+
+        <!-- Comment Form -->
+        {% if user.is_authenticated %}
+            <div class="comment-form">
+                <h5 class="mb-3 fw-bold">
+                    <i class="fas fa-pen me-2 text-primary"></i>
+                    Add Your Comment
+                </h5>
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <textarea name="comment" class="form-control" placeholder="What are your thoughts on this post?" required></textarea>
+                    </div>
+                    <button type="submit" class="comment-submit-btn">
+                        <i class="fas fa-paper-plane"></i>
+                        <span>Post Comment</span>
+                    </button>
+                </form>
+            </div>
+        {% else %}
+            <div class="comment-form text-center">
+                <h5 class="mb-3">Want to join the discussion?</h5>
+                <p class="text-muted mb-3">Please log in to share your thoughts and engage with other readers.</p>
+                <a href="{% url 'login' %}" class="comment-submit-btn text-decoration-none">
+                    <i class="fas fa-sign-in-alt"></i>
+                    <span>Login to Comment</span>
+                </a>
+            </div>
+        {% endif %}
+
+        <!-- Comments List -->
+        <div class="comments-list">
+            {% for comment in comments %}
+                <div class="comment-item">
+                    <div class="comment-header">
+                        <div class="comment-author-info">
+                            {% if comment.user.profile.profile_picture %}
+                                <img src="{{ comment.user.profile.profile_picture.url }}" alt="{{ comment.user.username }}" class="comment-avatar">
+                            {% else %}
+                                <div class="comment-avatar-placeholder">
+                                    {{ comment.user.username|first|upper }}
+                                </div>
+                            {% endif %}
+                            <div class="comment-author-details">
+                                <h6>{{ comment.user.username }}</h6>
+                                <small>{{ comment.created_at|date:"M j, Y H:i" }}</small>
+                            </div>
+                        </div>
+
+                        <div class="comment-actions">
+                            {% if user.is_authenticated %}
+                                <button class="comment-action-btn" onclick="toggleReplyForm({{ comment.id }})">
+                                    <i class="fas fa-reply"></i>
+                                    <span>Reply</span>
+                                </button>
+                            {% endif %}
+                            {% if user == comment.user or user == post.author %}
+                                <button class="comment-action-btn comment-delete-btn" onclick="deleteComment({{ comment.id }})">
+                                    <i class="fas fa-trash"></i>
+                                    <span>Delete</span>
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="comment-content">
+                        {{ comment.text }}
+                    </div>
+
+                    <!-- Reply Form -->
+                    {% if user.is_authenticated %}
+                        <div id="reply-form-{{ comment.id }}" class="reply-form" style="display: none;">
+                            <h6 class="mb-3">
+                                <i class="fas fa-reply me-2"></i>
+                                Reply to {{ comment.user.username }}
+                            </h6>
+                            <form method="POST">
+                                {% csrf_token %}
+                                <input type="hidden" name="parent_id" value="{{ comment.id }}">
+                                <div class="mb-3">
+                                    <textarea name="comment" class="form-control" placeholder="Write your reply..." required></textarea>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-paper-plane me-1"></i>
+                                        Post Reply
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleReplyForm({{ comment.id }})">
+                                        Cancel
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    {% endif %}
+
+                    <!-- Replies -->
+                    {% for reply in comment.replies.all %}
+                        <div class="reply-comment">
+                            <div class="comment-item">
+                                <div class="comment-header">
+                                    <div class="comment-author-info">
+                                        {% if reply.user.profile.profile_picture %}
+                                            <img src="{{ reply.user.profile.profile_picture.url }}" alt="{{ reply.user.username }}" class="comment-avatar">
+                                        {% else %}
+                                            <div class="comment-avatar-placeholder">
+                                                {{ reply.user.username|first|upper }}
+                                            </div>
+                                        {% endif %}
+                                        <div class="comment-author-details">
+                                            <h6>
+                                                {{ reply.user.username }}
+                                                <span class="reply-badge">Reply</span>
+                                            </h6>
+                                            <small>{{ reply.created_at|date:"M j, Y H:i" }}</small>
+                                        </div>
+                                    </div>
+
+                                    {% if user == reply.user or user == post.author %}
+                                        <div class="comment-actions">
+                                            <button class="comment-action-btn comment-delete-btn" onclick="deleteComment({{ reply.id }})">
+                                                <i class="fas fa-trash"></i>
+                                                <span>Delete</span>
+                                            </button>
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="comment-content">
+                                    {{ reply.text }}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% empty %}
+                <div class="text-center py-5">
+                    <i class="fas fa-comments text-muted" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                    <h5 class="text-muted">No comments yet</h5>
+                    <p class="text-muted">Be the first to share your thoughts!</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for Interactions -->
+<script>
+    // Like functionality
+    {% if user.is_authenticated %}
         document.getElementById("like-btn").addEventListener("click", function() {
             fetch("{% url 'like_post' post.id %}", {
                 method: "POST",
@@ -137,63 +866,46 @@
             })
             .then(response => response.json())
             .then(data => {
-                document.getElementById("like-count").innerText = "❤️ Likes: " + data.total_likes;
+                const likeCount = document.getElementById("like-count");
+                const likeText = document.getElementById("like-text");
+
+                likeCount.innerText = `(${data.total_likes})`;
+
                 if (data.liked) {
-                    this.classList.remove("btn-outline-primary");
-                    this.classList.add("btn-danger");
-                    this.innerText = "❤️ Unlike";
+                    likeText.innerText = "Unlike";
+                    this.classList.add("btn-liked");
                 } else {
-                    this.classList.remove("btn-danger");
-                    this.classList.add("btn-outline-primary");
-                    this.innerText = "👍 Like";
+                    likeText.innerText = "Like";
+                    this.classList.remove("btn-liked");
                 }
             });
         });
-    </script>
-{% else %}
-    <div class="mt-4 text-muted">
-        <p class="fw-bold">❤️ Likes: {{ post.total_likes }}</p>
-        <p class="small">Login to like this post.</p>
-    </div>
-{% endif %}
+    {% endif %}
 
-    <!-- Comments Section -->
-    <hr class="my-5">
-    <h3 class="fw-bold mb-4">💬 Comments</h3>
-    <div class="card p-4 shadow-sm bg-light">
+    // Delete post confirmation
+    function confirmDelete() {
+        if (confirm("Are you sure you want to delete this post? This action cannot be undone.")) {
+            window.location.href = "{% url 'delete_post' post.id %}";
+        }
+    }
 
-        {% if user.is_authenticated %}
-            <form method="POST" class="mb-4 comment-box">
-                {% csrf_token %}
-                <textarea name="comment" class="form-control mb-2" placeholder="Write a comment..." required></textarea>
-                <button type="submit" class="btn btn-primary">Post Comment</button>
-            </form>
-        {% else %}
-            <p class="text-muted text-center">You must be logged in to comment.</p>
-        {% endif %}
-        <hr>
+    // Toggle reply form
+    function toggleReplyForm(commentId) {
+        const replyForm = document.getElementById(`reply-form-${commentId}`);
+        if (replyForm.style.display === "none" || replyForm.style.display === "") {
+            replyForm.style.display = "block";
+            replyForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+            replyForm.style.display = "none";
+        }
+    }
 
-        {% for comment in comments %}
-            <div class="d-flex align-items-start mb-4 bg-white border rounded p-3 shadow-sm">
-                <img src="{{ comment.user.profile.profile_picture.url }}" 
-                     class="rounded-circle me-3 border" width="50" height="50">
-                <div class="w-100">
-                    <div class="d-flex justify-content-between mb-1">
-                        <strong>
-                            <a href="{% url 'author_profile' comment.user.username %}" class="text-primary text-decoration-none">
-                                {{ comment.user.username }}
-                            </a>
-                        </strong>
-                        <small class="text-muted">{{ comment.created_at|date:"M j, Y H:i" }}</small>
-                    </div>
-                    <div class="comment-body">
-                        {{ comment.text }}
-                    </div>
-                </div>
-            </div>
-        {% empty %}
-            <p class="text-muted text-center">No comments yet. Be the first to share your thoughts!</p>
-        {% endfor %}
-    </div>
-</div>
+    // Delete comment
+    function deleteComment(commentId) {
+        if (confirm("Are you sure you want to delete this comment?")) {
+            window.location.href = `/comment/${commentId}/delete/`;
+        }
+    }
+</script>
+
 {% endblock %}
