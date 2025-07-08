@@ -38,7 +38,9 @@
         </div>
         
         <p class="post-excerpt">{{ post.content|truncatewords:25 }}</p>
-        
+
+       
+
         {% if post.tags.all %}
             <div class="post-tags">
                 {% for tag in post.tags.all %}
@@ -48,11 +50,27 @@
                 {% endfor %}
             </div>
         {% endif %}
+
+         <!-- Post Statistics -->
+        <div class="post-stats">
+            <div class="stat-item">
+                <i class="fas fa-heart text-danger"></i>
+                <span>{{ post.likes.count }}</span>
+            </div>
+            <div class="stat-item">
+                <i class="fas fa-comment text-primary"></i>
+                <span>{{ post.comments.count }}</span>
+            </div>
+            <div class="stat-item">
+                <i class="fas fa-eye text-info"></i>
+                <span>{{ post.views.count }}</span>
+            </div>
+        </div>
         
         {% if user.is_authenticated %}
             <a href="{% url 'post_detail' post.id %}" class="read-more-btn">
                 <i class="fas fa-book-open"></i>
-                <span>Read Full Story</span>
+                <span>Read Full Blog</span>
                 <i class="fas fa-arrow-right"></i>
             </a>
         {% else %}

@@ -1,26 +1,54 @@
 services:
-  # Django Web Application (Development)
+  # Django Web Application (Development) with hot reload
   web:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "${DEV_PORT:-8000}:8000"
     environment:
       - DEBUG=True
-      - SECRET_KEY=django-insecure-so5!pqmgf46+pqe7qftp(biojd@3rlv1!txc1gghmy0pko2p&t
-      - ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
+      - SECRET_KEY=django-insecure-dev-key-change-in-production
+      - ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0,*.localhost
       - DATABASE_URL=sqlite:///db.sqlite3
       - DJANGO_SETTINGS_MODULE=myblog.settings
+      - PYTHONPATH=/app
+      - WATCHDOG_ENABLED=True
     volumes:
       - .:/app
       - ./media:/app/media
       - static_volume:/app/staticfiles
-    command: python manage.py runserver 0.0.0.0:8000
+      - logs_volume:/app/logs
+      - /app/venv  # Exclude virtual environment from volume mount
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py collectstatic --noinput --clear &&
+             python manage.py runserver 0.0.0.0:8000"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/", "||", "exit", "1"]
       interval: 30s
       timeout: 10s
-      retries: 5
+      retries: 3
+      start_period: 30s
+    stdin_open: true
+    tty: true
+
+  # Redis for development (optional)
+  redis-dev:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+    profiles:
+      - with-redis
 
 volumes:
   static_volume:
+    driver: local
+  logs_volume:
+    driver: local
+  redis_dev_data:
+    driver: local
