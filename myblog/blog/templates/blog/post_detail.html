@@ -906,6 +906,84 @@
             window.location.href = `/comment/${commentId}/delete/`;
         }
     }
+
+    // Go to top functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const goToTopBtn = document.getElementById('goToTopBtn');
+
+        // Show/hide button based on scroll position
+        window.addEventListener('scroll', function() {
+            if (window.pageYOffset > 300) {
+                goToTopBtn.style.display = 'flex';
+                goToTopBtn.style.opacity = '1';
+            } else {
+                goToTopBtn.style.opacity = '0';
+                setTimeout(() => {
+                    if (window.pageYOffset <= 300) {
+                        goToTopBtn.style.display = 'none';
+                    }
+                }, 300);
+            }
+        });
+
+        // Smooth scroll to top
+        goToTopBtn.addEventListener('click', function() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+    });
 </script>
+
+<!-- Go to Top Button -->
+<button id="goToTopBtn" class="go-to-top-btn" style="display: none;">
+    <i class="fas fa-chevron-up"></i>
+</button>
+
+<style>
+/* Go to Top Button Styles */
+.go-to-top-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+    transition: all 0.3s ease;
+    z-index: 1000;
+    opacity: 0;
+}
+
+.go-to-top-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.6);
+    background: linear-gradient(135deg, #5b5bf6 0%, #8b5cf6 50%, #d946ef 100%);
+}
+
+.go-to-top-btn:active {
+    transform: translateY(-1px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .go-to-top-btn {
+        bottom: 20px;
+        right: 20px;
+        width: 45px;
+        height: 45px;
+        font-size: 16px;
+    }
+}
+</style>
 
 {% endblock %}

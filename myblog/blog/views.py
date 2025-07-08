@@ -149,7 +149,10 @@ def create_post(request):
                 tagged_authors = User.objects.filter(id__in=author_ids)
                 post.tagged_authors.set(tagged_authors)
 
+            messages.success(request, f"🎉 Your post '{post.title}' has been published successfully!")
             return redirect("post_detail", post.id)
+        else:
+            messages.error(request, "Please correct the errors below and try again.")
     else:
         form = PostForm()
 
@@ -261,6 +264,7 @@ def edit_post(request, post_id):
     post = get_object_or_404(Post, id=post_id)
 
     if request.user != post.author:
+        messages.error(request, "You don't have permission to edit this post.")
         return redirect("post_detail", post_id=post.id)  # Prevent unauthorized editing
 
     if request.method == "POST":
@@ -296,7 +300,10 @@ def edit_post(request, post_id):
             else:
                 updated_post.tagged_authors.clear()
 
+            messages.success(request, f"✏️ Your post '{updated_post.title}' has been updated successfully!")
             return redirect("post_detail", post_id=post.id)
+        else:
+            messages.error(request, "Please correct the errors below and try again.")
     else:
         # Pre-populate the new_tags field with existing tags that aren't in the dropdown
         existing_tag_names = [tag.name for tag in post.tags.all()]
@@ -310,8 +317,12 @@ def delete_post(request, post_id):
     post = get_object_or_404(Post, id=post_id)
 
     if request.user == post.author:
+        post_title = post.title
         post.delete()
+        messages.success(request, f"🗑️ Your post '{post_title}' has been deleted successfully.")
         return redirect("home")  # Redirect to homepage after deletion
+    else:
+        messages.error(request, "You don't have permission to delete this post.")
 
     return redirect("post_detail", post_id=post.id)  # Prevent unauthorized deletion
 
@@ -324,6 +335,9 @@ def author_profile(request, username):
     tagged_posts = Post.objects.filter(tagged_authors=author).order_by("-created_at")
 
     is_own_profile = request.user == author  # Check if it's the authenticated user's profile
+
+    # Calculate total likes for author's posts
+    total_likes = sum(post.likes.count() for post in own_posts)
 
     # Pagination: Show first 6 posts for each category
     initial_own_posts = own_posts[:6]
@@ -341,6 +355,122 @@ def author_profile(request, username):
         "has_more_tagged": has_more_tagged,
         "total_own_posts": own_posts.count(),
         "total_tagged_posts": tagged_posts.count(),
+        "total_likes": total_likes,
+    })
+
+
+@login_required
+def load_more_own_posts(request, username):
+    """AJAX view to load more own posts for author profile."""
+    author = get_object_or_404(User, username=username)
+    offset = int(request.GET.get('offset', 0))
+    limit = 6
+
+    own_posts = Post.objects.filter(author=author).order_by("-created_at")[offset:offset + limit]
+    has_more = Post.objects.filter(author=author).count() > offset + limit
+
+    # Render posts HTML
+    posts_html = ""
+    for post in own_posts:
+        posts_html += f'''
+        <div class="col-lg-6 mb-4">
+          <div class="card h-100 shadow-sm border-0" style="border-radius: 15px; overflow: hidden;">
+            {"<img src='" + post.image.url + "' class='card-img-top' alt='" + post.title + "' style='height: 200px; object-fit: cover;'>" if post.image else ""}
+            <div class="card-body d-flex flex-column">
+              <h5 class="card-title">
+                <a href="/post/{post.id}/" class="text-decoration-none text-dark">
+                  {post.title}
+                </a>
+              </h5>
+              <p class="card-text text-muted">{post.content[:100]}...</p>
+
+              <div class="post-stats mb-2">
+                <span class="badge bg-light text-dark me-2">
+                  <i class="fas fa-heart text-danger me-1"></i>{post.likes.count()}
+                </span>
+                <span class="badge bg-light text-dark me-2">
+                  <i class="fas fa-comment text-primary me-1"></i>{post.comments.count()}
+                </span>
+                <span class="badge bg-light text-dark">
+                  <i class="fas fa-eye text-info me-1"></i>{post.views.count()}
+                </span>
+              </div>
+
+              <div class="mt-auto">
+                <div class="d-flex justify-content-between align-items-center">
+                  <small class="text-muted">{post.created_at.strftime("%b %d, %Y")}</small>
+                  <a href="/post/{post.id}/" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-eye me-1"></i>View
+                  </a>
+                </div>
+                {"<div class='mt-2'><a href='/post/" + str(post.id) + "/edit/' class='btn btn-outline-warning btn-sm me-2'><i class='fas fa-edit me-1'></i>Edit</a><button class='btn btn-outline-danger btn-sm' onclick='confirmDelete(" + str(post.id) + ")'><i class='fas fa-trash me-1'></i>Delete</button></div>" if request.user == author else ""}
+              </div>
+            </div>
+          </div>
+        </div>
+        '''
+
+    return JsonResponse({
+        'success': True,
+        'html': posts_html,
+        'has_more': has_more
+    })
+
+
+@login_required
+def load_more_tagged_posts(request, username):
+    """AJAX view to load more tagged posts for author profile."""
+    author = get_object_or_404(User, username=username)
+    offset = int(request.GET.get('offset', 0))
+    limit = 6
+
+    tagged_posts = Post.objects.filter(tagged_authors=author).order_by("-created_at")[offset:offset + limit]
+    has_more = Post.objects.filter(tagged_authors=author).count() > offset + limit
+
+    # Render posts HTML
+    posts_html = ""
+    for post in tagged_posts:
+        posts_html += f'''
+        <div class="col-lg-6 mb-4">
+          <div class="card h-100 shadow-sm border-0" style="border-radius: 15px; overflow: hidden;">
+            {"<img src='" + post.image.url + "' class='card-img-top' alt='" + post.title + "' style='height: 200px; object-fit: cover;'>" if post.image else ""}
+            <div class="card-body d-flex flex-column">
+              <h5 class="card-title">
+                <a href="/post/{post.id}/" class="text-decoration-none text-dark">
+                  {post.title}
+                </a>
+              </h5>
+              <p class="card-text text-muted">{post.content[:100]}...</p>
+
+              <div class="post-stats mb-2">
+                <span class="badge bg-light text-dark me-2">
+                  <i class="fas fa-heart text-danger me-1"></i>{post.likes.count()}
+                </span>
+                <span class="badge bg-light text-dark me-2">
+                  <i class="fas fa-comment text-primary me-1"></i>{post.comments.count()}
+                </span>
+                <span class="badge bg-light text-dark">
+                  <i class="fas fa-eye text-info me-1"></i>{post.views.count()}
+                </span>
+              </div>
+
+              <div class="mt-auto">
+                <div class="d-flex justify-content-between align-items-center">
+                  <small class="text-muted">By {post.author.username} on {post.created_at.strftime("%b %d, %Y")}</small>
+                  <a href="/post/{post.id}/" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-eye me-1"></i>View
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        '''
+
+    return JsonResponse({
+        'success': True,
+        'html': posts_html,
+        'has_more': has_more
     })
 
 
@@ -491,23 +621,328 @@ def dashboard(request):
     return render(request, "blog/dashboard.html", context)
 
 
-from .forms import CustomUserCreationForm 
+from .forms import CustomUserCreationForm, EmailVerificationForm, PasswordResetRequestForm, PasswordResetVerifyForm, PasswordResetConfirmForm
+from .models import EmailVerification, PasswordResetToken
+from .utils import send_verification_email, send_welcome_email, send_password_reset_email, send_password_reset_success_email
+from django.contrib import messages
 
 def register(request):
     if request.method == "POST":
         form = CustomUserCreationForm(request.POST, request.FILES)
         if form.is_valid():
-            user = form.save()
-            Profile.objects.create(
-                user=user,
-                bio=form.cleaned_data["bio"],
-                profile_picture=form.cleaned_data["profile_picture"]
-            )
-            return redirect("login")  # Redirect to login after signup
+            try:
+                # Save user as inactive
+                user = form.save()
+
+                # Create profile
+                Profile.objects.create(
+                    user=user,
+                    bio=form.cleaned_data.get("bio", ""),
+                    profile_picture=form.cleaned_data.get("profile_picture")
+                )
+
+                # Create email verification record and generate OTP
+                email_verification = EmailVerification.objects.create(user=user)
+                otp_code = email_verification.generate_otp()
+
+                # Send verification email
+                if send_verification_email(user, otp_code):
+                    messages.success(
+                        request,
+                        f"Registration successful! A verification code has been sent to {user.email}. "
+                        "Please check your email and enter the code to activate your account."
+                    )
+                    # Store user ID in session for verification
+                    request.session['pending_verification_user_id'] = user.id
+                    return redirect("verify_email")
+                else:
+                    # If email sending fails, delete the user and show error
+                    user.delete()
+                    messages.error(
+                        request,
+                        "Failed to send verification email. Please try again or contact support."
+                    )
+
+            except Exception as e:
+                messages.error(request, f"Registration failed: {str(e)}")
+        else:
+            # Form has validation errors
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field.replace('_', ' ').title()}: {error}")
     else:
         form = CustomUserCreationForm()
 
     return render(request, "blog/register.html", {"form": form})
+
+
+def verify_email(request):
+    """Handle email verification with OTP."""
+    # Check if user has pending verification
+    user_id = request.session.get('pending_verification_user_id')
+    if not user_id:
+        messages.error(request, "No pending email verification found. Please register first.")
+        return redirect("register")
+
+    try:
+        user = User.objects.get(id=user_id, is_active=False)
+        email_verification = EmailVerification.objects.get(user=user)
+    except (User.DoesNotExist, EmailVerification.DoesNotExist):
+        messages.error(request, "Invalid verification session. Please register again.")
+        return redirect("register")
+
+    if request.method == "POST":
+        form = EmailVerificationForm(request.POST)
+        if form.is_valid():
+            entered_otp = form.cleaned_data['otp_code']
+            success, message = email_verification.verify_otp(entered_otp)
+
+            if success:
+                # Send welcome email
+                send_welcome_email(user)
+
+                # Clear session
+                del request.session['pending_verification_user_id']
+
+                messages.success(request, message + " You can now log in to your account.")
+                return redirect("login")
+            else:
+                messages.error(request, message)
+        else:
+            for error in form.errors.values():
+                messages.error(request, error[0])
+    else:
+        form = EmailVerificationForm()
+
+    # Check if OTP is expired
+    if email_verification.is_expired():
+        messages.warning(
+            request,
+            "Your verification code has expired. Click 'Resend Code' to get a new one."
+        )
+
+    context = {
+        'form': form,
+        'user_email': user.email,
+        'masked_email': f"{user.email[:2]}***@{user.email.split('@')[1]}"
+    }
+    return render(request, "blog/verify_email.html", context)
+
+
+def resend_verification_code(request):
+    """Resend verification code to user."""
+    user_id = request.session.get('pending_verification_user_id')
+    if not user_id:
+        messages.error(request, "No pending email verification found.")
+        return redirect("register")
+
+    try:
+        user = User.objects.get(id=user_id, is_active=False)
+        email_verification = EmailVerification.objects.get(user=user)
+
+        # Generate new OTP
+        otp_code = email_verification.generate_otp()
+
+        # Send verification email
+        if send_verification_email(user, otp_code):
+            messages.success(request, "A new verification code has been sent to your email.")
+        else:
+            messages.error(request, "Failed to send verification email. Please try again.")
+
+    except (User.DoesNotExist, EmailVerification.DoesNotExist):
+        messages.error(request, "Invalid verification session.")
+        return redirect("register")
+
+    return redirect("verify_email")
+
+
+def password_reset_request(request):
+    """Handle password reset request."""
+    if request.method == "POST":
+        form = PasswordResetRequestForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            try:
+                user = User.objects.get(email=email, is_active=True)
+
+                # Create or get existing password reset token
+                reset_token, created = PasswordResetToken.objects.get_or_create(
+                    user=user,
+                    is_used=False,
+                    defaults={'otp_code': ''}
+                )
+
+                # Generate new OTP
+                otp_code = reset_token.generate_otp()
+
+                # Send password reset email
+                if send_password_reset_email(user, otp_code):
+                    messages.success(
+                        request,
+                        f"Password reset code has been sent to {email}. Please check your email."
+                    )
+                    # Store user ID in session for verification
+                    request.session['password_reset_user_id'] = user.id
+                    return redirect("password_reset_verify")
+                else:
+                    messages.error(
+                        request,
+                        "Failed to send password reset email. Please try again."
+                    )
+
+            except User.DoesNotExist:
+                # Don't reveal that the user doesn't exist
+                messages.success(
+                    request,
+                    f"If an account with {email} exists, a password reset code has been sent."
+                )
+        else:
+            for error in form.errors.values():
+                messages.error(request, error[0])
+    else:
+        form = PasswordResetRequestForm()
+
+    return render(request, "blog/password_reset_request.html", {"form": form})
+
+
+def password_reset_verify(request):
+    """Handle password reset OTP verification."""
+    # Check if user has pending password reset
+    user_id = request.session.get('password_reset_user_id')
+    if not user_id:
+        messages.error(request, "No pending password reset found. Please request a new reset.")
+        return redirect("password_reset_request")
+
+    try:
+        user = User.objects.get(id=user_id, is_active=True)
+        reset_token = PasswordResetToken.objects.filter(user=user, is_used=False).first()
+
+        if not reset_token:
+            messages.error(request, "No valid reset token found. Please request a new reset.")
+            return redirect("password_reset_request")
+
+    except User.DoesNotExist:
+        messages.error(request, "Invalid reset session. Please request a new reset.")
+        return redirect("password_reset_request")
+
+    if request.method == "POST":
+        form = PasswordResetVerifyForm(request.POST)
+        if form.is_valid():
+            entered_otp = form.cleaned_data['otp_code']
+            success, message = reset_token.verify_otp(entered_otp)
+
+            if success:
+                # Store verified token ID in session
+                request.session['verified_reset_token_id'] = reset_token.id
+                messages.success(request, message + " You can now set a new password.")
+                return redirect("password_reset_confirm")
+            else:
+                messages.error(request, message)
+        else:
+            for error in form.errors.values():
+                messages.error(request, error[0])
+    else:
+        form = PasswordResetVerifyForm()
+
+    # Check if OTP is expired
+    if reset_token.is_expired():
+        messages.warning(
+            request,
+            "Your reset code has expired. Click 'Resend Code' to get a new one."
+        )
+
+    context = {
+        'form': form,
+        'user_email': user.email,
+        'masked_email': f"{user.email[:2]}***@{user.email.split('@')[1]}"
+    }
+    return render(request, "blog/password_reset_verify.html", context)
+
+
+def password_reset_confirm(request):
+    """Handle new password setting after OTP verification."""
+    # Check if user has verified reset token
+    token_id = request.session.get('verified_reset_token_id')
+    if not token_id:
+        messages.error(request, "No verified reset session found. Please start the reset process again.")
+        return redirect("password_reset_request")
+
+    try:
+        reset_token = PasswordResetToken.objects.get(id=token_id, is_used=False)
+        user = reset_token.user
+    except PasswordResetToken.DoesNotExist:
+        messages.error(request, "Invalid reset session. Please start the reset process again.")
+        return redirect("password_reset_request")
+
+    if request.method == "POST":
+        form = PasswordResetConfirmForm(request.POST)
+        if form.is_valid():
+            new_password = form.cleaned_data['new_password1']
+
+            # Set new password
+            user.set_password(new_password)
+            user.save()
+
+            # Mark token as used
+            reset_token.mark_as_used()
+
+            # Clear session data
+            if 'password_reset_user_id' in request.session:
+                del request.session['password_reset_user_id']
+            if 'verified_reset_token_id' in request.session:
+                del request.session['verified_reset_token_id']
+
+            # Send success email
+            send_password_reset_success_email(user)
+
+            messages.success(
+                request,
+                "Your password has been reset successfully! You can now log in with your new password."
+            )
+            return redirect("login")
+        else:
+            for error in form.errors.values():
+                messages.error(request, error[0])
+    else:
+        form = PasswordResetConfirmForm()
+
+    context = {
+        'form': form,
+        'user_email': user.email
+    }
+    return render(request, "blog/password_reset_confirm.html", context)
+
+
+def resend_password_reset_code(request):
+    """Resend password reset code to user."""
+    user_id = request.session.get('password_reset_user_id')
+    if not user_id:
+        messages.error(request, "No pending password reset found.")
+        return redirect("password_reset_request")
+
+    try:
+        user = User.objects.get(id=user_id, is_active=True)
+        reset_token = PasswordResetToken.objects.filter(user=user, is_used=False).first()
+
+        if not reset_token:
+            # Create new token if none exists
+            reset_token = PasswordResetToken.objects.create(user=user)
+
+        # Generate new OTP
+        otp_code = reset_token.generate_otp()
+
+        # Send password reset email
+        if send_password_reset_email(user, otp_code):
+            messages.success(request, "A new password reset code has been sent to your email.")
+        else:
+            messages.error(request, "Failed to send password reset email. Please try again.")
+
+    except User.DoesNotExist:
+        messages.error(request, "Invalid reset session.")
+        return redirect("password_reset_request")
+
+    return redirect("password_reset_verify")
+
 
 # blog/views.py
 from django.contrib.auth import authenticate, login
@@ -519,10 +954,53 @@ def custom_login(request):
         form = LoginForm(request, data=request.POST)
         if form.is_valid():
             user = form.get_user()
+
+            # Check if user account is active
+            if not user.is_active:
+                # Check if user has pending email verification
+                try:
+                    email_verification = EmailVerification.objects.get(user=user)
+                    if not email_verification.is_verified:
+                        messages.error(
+                            request,
+                            "Your account is not yet verified. Please check your email for the verification code."
+                        )
+                        # Set session for verification
+                        request.session['pending_verification_user_id'] = user.id
+                        return redirect("verify_email")
+                    else:
+                        messages.error(request, "Your account has been deactivated. Please contact support.")
+                except EmailVerification.DoesNotExist:
+                    messages.error(request, "Your account is not active. Please contact support.")
+
+                return render(request, "blog/login.html", {"form": form})
+
+            # User is active, proceed with login
             login(request, user)
+            # Clear any existing messages before adding welcome message
+            storage = messages.get_messages(request)
+            for _ in storage:
+                pass  # This clears the messages
+            messages.success(request, f"Welcome back, {user.first_name or user.username}!")
             return redirect("home")
         else:
-            return render(request, "blog/login.html", {"form": form, "error": "Invalid username or password"})
+            # Check if the error is due to inactive account
+            username = request.POST.get('username')
+            if username:
+                try:
+                    user = User.objects.get(username=username)
+                    if not user.is_active:
+                        messages.error(
+                            request,
+                            "Your account is not yet verified. Please check your email for the verification code."
+                        )
+                        request.session['pending_verification_user_id'] = user.id
+                        return redirect("verify_email")
+                except User.DoesNotExist:
+                    pass
+
+            messages.error(request, "Invalid username or password. Please try again.")
+            return render(request, "blog/login.html", {"form": form})
     else:
         form = LoginForm()
     return render(request, "blog/login.html", {"form": form})
@@ -532,8 +1010,14 @@ from django.contrib.auth import logout
 from django.shortcuts import redirect
 
 def custom_logout(request):
-    logout(request)
-    return redirect("home")  # Redirect to login page after logout
+    if request.user.is_authenticated:
+        username = request.user.first_name or request.user.username
+        logout(request)
+        messages.success(request, f"You have been successfully logged out. See you soon, {username}!")
+    else:
+        messages.info(request, "You were not logged in.")
+
+    return redirect("login")  # Redirect to login page after logout
 
 
 from django.http import JsonResponse

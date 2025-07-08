@@ -61,6 +61,8 @@
 <div class="signup-container">
     <h2 class="text-center">Create an Account</h2>
 
+    <!-- Messages are now handled globally in base.html -->
+
     <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
         {% for field in form %}

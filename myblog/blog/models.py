@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import timedelta
+import random
+import string
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -131,4 +133,134 @@ class DailyAnalytics(models.Model):
 
     def __str__(self):
         return f'Daily analytics for {self.user.username} on {self.date}'
+
+
+class EmailVerification(models.Model):
+    """Model to handle email verification for user registration."""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="email_verification")
+    otp_code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_verified = models.BooleanField(default=False)
+
+    def generate_otp(self):
+        """Generate a 6-digit OTP code and reset timestamp."""
+        self.otp_code = ''.join(random.choices(string.digits, k=6))
+        self.created_at = timezone.now()  # Reset timestamp for new OTP
+        self.is_verified = False  # Reset verification status
+        self.save()
+
+        print(f"🔑 New OTP generated:")
+        print(f"   User: {self.user.username}")
+        print(f"   OTP: {self.otp_code}")
+        print(f"   Generated at: {self.created_at}")
+
+        return self.otp_code
+
+    def is_expired(self):
+        """Check if OTP is expired (valid for 30 minutes)."""
+        expiry_time = self.created_at + timedelta(minutes=30)
+        current_time = timezone.now()
+        is_expired = current_time > expiry_time
+
+        # Debug logging
+        print(f"🕐 OTP Expiry Check:")
+        print(f"   Created at: {self.created_at}")
+        print(f"   Current time: {current_time}")
+        print(f"   Expiry time: {expiry_time}")
+        print(f"   Is expired: {is_expired}")
+
+        return is_expired
+
+    def verify_otp(self, entered_otp):
+        """Verify the entered OTP."""
+        print(f"🔑 OTP Verification:")
+        print(f"   Stored OTP: {self.otp_code}")
+        print(f"   Entered OTP: {entered_otp}")
+        print(f"   User: {self.user.username}")
+
+        if self.is_expired():
+            return False, "OTP has expired. Please request a new one."
+
+        if self.otp_code == entered_otp:
+            self.is_verified = True
+            self.user.is_active = True
+            self.user.save()
+            self.save()
+            print(f"✅ OTP verification successful for {self.user.username}")
+            return True, "Email verified successfully!"
+
+        print(f"❌ OTP mismatch for {self.user.username}")
+        return False, "Invalid OTP. Please try again."
+
+    def __str__(self):
+        return f'Email verification for {self.user.username} - {"Verified" if self.is_verified else "Pending"}'
+
+
+class PasswordResetToken(models.Model):
+    """Model to store password reset tokens."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    otp_code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_used = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Password reset for {self.user.username} - {self.otp_code}"
+
+    def generate_otp(self):
+        """Generate a 6-digit OTP code and reset timestamp."""
+        self.otp_code = ''.join(random.choices(string.digits, k=6))
+        self.created_at = timezone.now()
+        self.is_used = False
+        self.save()
+
+        print(f"🔑 Password reset OTP generated:")
+        print(f"   User: {self.user.username}")
+        print(f"   Email: {self.user.email}")
+        print(f"   OTP: {self.otp_code}")
+        print(f"   Generated at: {self.created_at}")
+
+        return self.otp_code
+
+    def is_expired(self):
+        """Check if OTP is expired (valid for 15 minutes)."""
+        expiry_time = self.created_at + timedelta(minutes=15)
+        current_time = timezone.now()
+        is_expired = current_time > expiry_time
+
+        print(f"🕐 Password Reset OTP Expiry Check:")
+        print(f"   Created at: {self.created_at}")
+        print(f"   Current time: {current_time}")
+        print(f"   Expiry time: {expiry_time}")
+        print(f"   Is expired: {is_expired}")
+
+        return is_expired
+
+    def verify_otp(self, entered_otp):
+        """Verify the entered OTP for password reset."""
+        print(f"🔑 Password Reset OTP Verification:")
+        print(f"   Stored OTP: {self.otp_code}")
+        print(f"   Entered OTP: {entered_otp}")
+        print(f"   User: {self.user.username}")
+        print(f"   Is used: {self.is_used}")
+
+        if self.is_used:
+            return False, "This reset code has already been used."
+
+        if self.is_expired():
+            return False, "Reset code has expired. Please request a new one."
+
+        if self.otp_code == entered_otp:
+            print(f"✅ Password reset OTP verification successful for {self.user.username}")
+            return True, "Reset code verified successfully!"
+
+        print(f"❌ Password reset OTP mismatch for {self.user.username}")
+        return False, "Invalid reset code. Please try again."
+
+    def mark_as_used(self):
+        """Mark the token as used."""
+        self.is_used = True
+        self.save()
 

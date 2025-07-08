@@ -38,10 +38,20 @@ urlpatterns = [
     path('profile/edit/', edit_profile, name='edit_profile'),
     path('profile/change-password/', change_password, name='change_password'),
     path('profile/<str:username>/', author_profile, name='author_profile'),
+    path('profile/<str:username>/load-more-own/', load_more_own_posts, name='load_more_own_posts'),
+    path('profile/<str:username>/load-more-tagged/', load_more_tagged_posts, name='load_more_tagged_posts'),
 
     path("register/", register, name="register"),
+    path("verify-email/", verify_email, name="verify_email"),
+    path("resend-verification/", resend_verification_code, name="resend_verification"),
     path("login/", custom_login, name="login"),
     path("logout/", custom_logout, name="logout"),
+
+    # Password Reset URLs
+    path("password-reset/", password_reset_request, name="password_reset_request"),
+    path("password-reset/verify/", password_reset_verify, name="password_reset_verify"),
+    path("password-reset/confirm/", password_reset_confirm, name="password_reset_confirm"),
+    path("password-reset/resend/", resend_password_reset_code, name="resend_password_reset"),
 
     path("search-authors/", search_authors, name="search_authors"),
     path("search-tags/", search_tags, name="search_tags"),
