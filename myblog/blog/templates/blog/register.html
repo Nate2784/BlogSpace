@@ -77,11 +77,39 @@
             {% endfor %}
         </div>
         {% endfor %}
-        <button type="submit" class="btn btn-primary mt-3">Sign Up</button>
+        <button type="submit" class="btn btn-primary mt-3" id="submitBtn">
+            <span id="submitText">Sign Up</span>
+            <span id="loadingText" style="display: none;">
+                <i class="fas fa-spinner fa-spin me-2"></i>Creating Account...
+            </span>
+        </button>
     </form>
 
     <p class="text-center mt-4">
         Already have an account? <a href="{% url 'login' %}">Login</a>
     </p>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const submitBtn = document.getElementById('submitBtn');
+    const submitText = document.getElementById('submitText');
+    const loadingText = document.getElementById('loadingText');
+
+    form.addEventListener('submit', function() {
+        // Show loading state
+        submitBtn.disabled = true;
+        submitText.style.display = 'none';
+        loadingText.style.display = 'inline';
+
+        // Re-enable after 10 seconds as fallback
+        setTimeout(function() {
+            submitBtn.disabled = false;
+            submitText.style.display = 'inline';
+            loadingText.style.display = 'none';
+        }, 10000);
+    });
+});
+</script>
 {% endblock %}

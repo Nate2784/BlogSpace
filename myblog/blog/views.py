@@ -631,40 +631,93 @@ def register(request):
         form = CustomUserCreationForm(request.POST, request.FILES)
         if form.is_valid():
             try:
+                print("🔄 Starting user registration process...")
+
                 # Save user as inactive
+                print("📝 Saving user...")
                 user = form.save()
+                print(f"✅ User created: {user.username} ({user.email})")
 
                 # Create profile
+                print("👤 Creating user profile...")
                 Profile.objects.create(
                     user=user,
                     bio=form.cleaned_data.get("bio", ""),
                     profile_picture=form.cleaned_data.get("profile_picture")
                 )
+                print("✅ Profile created successfully")
 
-                # Create email verification record and generate OTP
-                email_verification = EmailVerification.objects.create(user=user)
+                # Create or get email verification record and generate OTP
+                print("🔑 Creating email verification...")
+                email_verification, created = EmailVerification.objects.get_or_create(user=user)
+                print(f"✅ Email verification {'created' if created else 'retrieved'}")
+
+                print("🎲 Generating OTP...")
                 otp_code = email_verification.generate_otp()
+                print(f"✅ OTP generated: {otp_code}")
 
                 # Send verification email
-                if send_verification_email(user, otp_code):
+                print("📧 Sending verification email...")
+                email_sent = send_verification_email(user, otp_code)
+
+                if email_sent:
+                    print("✅ Verification email sent successfully")
                     messages.success(
                         request,
                         f"Registration successful! A verification code has been sent to {user.email}. "
                         "Please check your email and enter the code to activate your account."
                     )
-                    # Store user ID in session for verification
-                    request.session['pending_verification_user_id'] = user.id
-                    return redirect("verify_email")
                 else:
-                    # If email sending fails, delete the user and show error
-                    user.delete()
-                    messages.error(
+                    print("⚠️ Email sending failed, but proceeding with registration")
+                    messages.warning(
                         request,
-                        "Failed to send verification email. Please try again or contact support."
+                        f"Registration successful! However, we couldn't send the verification email to {user.email}. "
+                        f"Your verification code is: {otp_code}. Please enter this code to activate your account."
                     )
 
+                # Store user ID in session for verification regardless of email status
+                request.session['pending_verification_user_id'] = user.id
+                request.session.save()  # Explicitly save session
+                print(f"🔗 Stored user ID in session: {user.id}")
+                print(f"🔗 Session data: {dict(request.session)}")
+
+                # Also add user_id as URL parameter as backup
+                from django.urls import reverse
+                verify_url = reverse("verify_email") + f"?user_id={user.id}"
+                print(f"🔗 Redirecting to: {verify_url}")
+                return redirect(verify_url)
+
             except Exception as e:
-                messages.error(request, f"Registration failed: {str(e)}")
+                # Log the actual error for debugging
+                print(f"❌ Registration error: {str(e)}")
+                import traceback
+                traceback.print_exc()
+
+                # Clean up any partially created user if something went wrong
+                try:
+                    if 'user' in locals():
+                        print(f"🧹 Cleaning up user: {user.username}")
+                        user.delete()
+                        print("✅ User cleanup completed")
+                except Exception as cleanup_error:
+                    print(f"⚠️ Cleanup error: {cleanup_error}")
+
+                # Provide specific error messages based on the error type
+                if "UNIQUE constraint failed" in str(e) or "already exists" in str(e):
+                    messages.error(
+                        request,
+                        "An account with this email or username already exists. Please try logging in instead."
+                    )
+                elif "email" in str(e).lower():
+                    messages.error(
+                        request,
+                        "There was an issue with the email address. Please check and try again."
+                    )
+                else:
+                    messages.error(
+                        request,
+                        "Registration failed due to a technical issue. Please try again or contact support if the problem persists."
+                    )
         else:
             # Form has validation errors
             for field, errors in form.errors.items():
@@ -678,18 +731,50 @@ def register(request):
 
 def verify_email(request):
     """Handle email verification with OTP."""
-    # Check if user has pending verification
-    user_id = request.session.get('pending_verification_user_id')
+    print(f"🔍 Verify email view accessed")
+    print(f"🔍 Session data: {dict(request.session)}")
+
+    # Check if user has pending verification (from session or URL parameter)
+    user_id = request.session.get('pending_verification_user_id') or request.GET.get('user_id')
+    print(f"🔍 User ID from session: {request.session.get('pending_verification_user_id')}")
+    print(f"🔍 User ID from URL: {request.GET.get('user_id')}")
+    print(f"🔍 Final user ID: {user_id}")
+
     if not user_id:
+        print("❌ No user ID in session or URL")
         messages.error(request, "No pending email verification found. Please register first.")
         return redirect("register")
 
     try:
-        user = User.objects.get(id=user_id, is_active=False)
+        # First, try to get the user (regardless of active status)
+        print(f"🔍 Looking for user with ID: {user_id}")
+        user = User.objects.get(id=user_id)
+        print(f"✅ Found user: {user.username} (active: {user.is_active})")
+
+        # Check if user is already active (already verified)
+        if user.is_active:
+            print(f"✅ User {user.username} is already verified")
+            # User is already verified, redirect to login
+            messages.success(request, "Your account is already verified. You can log in now.")
+            # Clear session
+            if 'pending_verification_user_id' in request.session:
+                del request.session['pending_verification_user_id']
+            return redirect("login")
+
+        # User exists but not active, get email verification
+        print(f"🔍 Looking for email verification for user: {user.username}")
         email_verification = EmailVerification.objects.get(user=user)
-    except (User.DoesNotExist, EmailVerification.DoesNotExist):
+        print(f"✅ Found email verification record")
+
+    except User.DoesNotExist:
         messages.error(request, "Invalid verification session. Please register again.")
         return redirect("register")
+    except EmailVerification.DoesNotExist:
+        # User exists but no email verification record - create one
+        email_verification = EmailVerification.objects.create(user=user)
+        otp_code = email_verification.generate_otp()
+        messages.info(request, f"New verification code generated: {otp_code}")
+        print(f"🔄 Created new email verification for existing user: {user.username}")
 
     if request.method == "POST":
         form = EmailVerificationForm(request.POST)
